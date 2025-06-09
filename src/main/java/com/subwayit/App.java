@@ -1,149 +1,223 @@
 package com.subwayit;
 
 import com.subwayit.dao.UserDAO;
-import com.subwayit.dao.UtangDAO; // Impor DAO baru
 import com.subwayit.database.DatabaseManager;
 import com.subwayit.model.User;
-import com.subwayit.model.Utang; // Impor model baru
+import com.subwayit.gui.DashboardPage; // Import the DashboardPage class
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.control.ComboBox;
 
-import java.text.NumberFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-
-/**
- * Main application class for SubwayIT.
- * Manages GUI scenes for different functionalities like adding users and debts.
- */
 public class App extends Application {
 
+    // GUI Components for Login
+    private TextField usernameField; // Maps to TxtUsername
+    private PasswordField passwordField; // Maps to TxtPassword
+    private Button loginButton; // Maps to BtnLogin
+    private Button registerButton; // New: for registration
+
+    // DAO instance
     private UserDAO userDAO;
-    private UtangDAO utangDAO;
-    private Stage primaryStage;
-    private Scene mainScene;
+
+    // A reference to the primary stage to switch scenes
+    private Stage primaryStage; // Added to hold the primary stage reference
 
     @Override
     public void start(Stage primaryStage) {
-        this.primaryStage = primaryStage;
+        this.primaryStage = primaryStage; // Store the primary stage reference
         userDAO = new UserDAO();
-        utangDAO = new UtangDAO();
-        primaryStage.setTitle("SubwayIT - Menu Utama");
+        primaryStage.setTitle("SubwayIT - Login/Register");
 
-        VBox mainLayout = new VBox(20);
-        mainLayout.setPadding(new Insets(30));
-        Label titleLabel = new Label("Selamat Datang di SubwayIT");
-        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        Button goToAddUserPageButton = new Button("Halaman Tambah Pengguna");
-        goToAddUserPageButton.setMaxWidth(Double.MAX_VALUE);
-        Button goToUtangPageButton = new Button("Halaman Tambah Utang");
-        goToUtangPageButton.setMaxWidth(Double.MAX_VALUE);
-        Button goToViewDebtPageButton = new Button("Halaman Lihat Informasi Utang"); // Tombol Baru
-        goToViewDebtPageButton.setMaxWidth(Double.MAX_VALUE);
-
-        goToAddUserPageButton.setOnAction(e -> primaryStage.setScene(createAddUserScene()));
-        goToUtangPageButton.setOnAction(e -> primaryStage.setScene(createUtangScene()));
-        goToViewDebtPageButton.setOnAction(e -> primaryStage.setScene(createViewDebtScene())); // Aksi Baru
-
-        mainLayout.getChildren().addAll(titleLabel, goToAddUserPageButton, goToUtangPageButton, goToViewDebtPageButton);
-        mainScene = new Scene(mainLayout, 400, 300);
-
-        primaryStage.setScene(mainScene);
-        primaryStage.show();
+        // Optional: Ensure tables are created when the app starts
+        // In a real application, this might be part of an installer or initial setup script.
         DatabaseManager.createTables();
-    }
-    
-    /**
-     * Creates the scene for the "View Debts" page.
-     * @return A Scene object for viewing debts.
-     */
-    private Scene createViewDebtScene() {
-        primaryStage.setTitle("SubwayIT - Lihat Informasi Utang");
 
-        // --- GUI Components ---
-        TextField userIdField = new TextField();
-        userIdField.setPromptText("Masukkan User ID yang ingin dicek");
-        Button searchButton = new Button("Cari Utang");
-        TextArea resultArea = new TextArea();
-        resultArea.setEditable(false);
-        resultArea.setWrapText(true);
-        
-        Button backToMenuButton = new Button("Kembali ke Menu Utama");
+        // --- UI Setup ---
 
-        // --- Set Actions ---
-        searchButton.setOnAction(e -> handleViewDebt(userIdField.getText(), resultArea));
-        backToMenuButton.setOnAction(e -> {
-            primaryStage.setTitle("SubwayIT - Menu Utama");
-            primaryStage.setScene(mainScene);
-        });
+        // "SUBWAYIT" Label
+        Label appTitle = new Label("SUBWAYIT");
+        appTitle.setFont(Font.font("Arial", 48)); // Larger font
+        appTitle.setTextFill(Color.web("#4CAF50")); // Green color
+        appTitle.setPadding(new Insets(0, 0, 30, 0)); // Padding below title
 
-        // --- Layout ---
-        VBox layout = new VBox(10);
-        layout.setPadding(new Insets(20));
-        layout.getChildren().addAll(
-            new Label("Lihat Utang Pengguna:"),
-            userIdField,
-            searchButton,
-            new Label("Hasil:"),
-            resultArea,
-            backToMenuButton
+        // Username Field
+        usernameField = new TextField();
+        usernameField.setPromptText("Username"); // Corresponds to TxtUsername
+        usernameField.setMaxWidth(250); // Limit width for cleaner look
+
+        // Password Field
+        passwordField = new PasswordField();
+        passwordField.setPromptText("Password"); // Corresponds to TxtPassword
+        passwordField.setMaxWidth(250); // Limit width
+
+        // Login Button
+        loginButton = new Button("Login"); // Corresponds to BtnLogin
+        loginButton.setFont(Font.font("Arial", 16));
+        loginButton.setTextFill(Color.WHITE);
+        loginButton.setStyle("-fx-background-color: #8BC34A; -fx-background-radius: 5;"); // Green color
+        loginButton.setPadding(new Insets(10, 30, 10, 30));
+        loginButton.setOnAction(e -> handleLogin()); // Action for login
+
+        // Register Button (New for functionality)
+        registerButton = new Button("Register");
+        registerButton.setFont(Font.font("Arial", 14));
+        registerButton.setStyle("-fx-background-color: #607D8B; -fx-background-radius: 5;"); // A different color
+        registerButton.setTextFill(Color.WHITE);
+        registerButton.setPadding(new Insets(8, 20, 8, 20));
+        registerButton.setOnAction(e -> handleRegister()); // Action for registration
+
+        // VBox for form elements
+        VBox formLayout = new VBox(15); // Spacing between elements
+        formLayout.setAlignment(Pos.CENTER);
+        formLayout.getChildren().addAll(
+                appTitle,
+                new Label("Username:"), usernameField, // Added explicit label for username
+                new Label("Password:"), passwordField, // Added explicit label for password
+                loginButton,
+                new Label("- OR -"), // Separator
+                registerButton
         );
 
-        return new Scene(layout, 500, 600);
+        // Main layout (StackPane to center the form)
+        VBox mainLayout = new VBox();
+        mainLayout.setAlignment(Pos.CENTER);
+        mainLayout.getChildren().add(formLayout);
+        mainLayout.setStyle("-fx-background-color: #E0E0E0;"); // Light grey background
+
+        Scene scene = new Scene(mainLayout, 800, 600); // Standard window size
+        primaryStage.setScene(scene);
+        primaryStage.show();
     }
-    
+
     /**
-     * Handles the logic to fetch and display debt information.
+     * Handles the login button action.
      */
-    private void handleViewDebt(String userId, TextArea resultArea) {
-        if (userId.isEmpty()) {
-            showAlert(Alert.AlertType.ERROR, "Kesalahan Input", "User ID tidak boleh kosong.");
+    private void handleLogin() {
+        String username = usernameField.getText();
+        String password = passwordField.getText();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Login Failed", "Username and password cannot be empty.");
             return;
         }
 
-        List<Utang> daftarUtang = utangDAO.getUtangByUserId(userId);
-        
-        if (daftarUtang.isEmpty()) {
-            resultArea.setText("Tidak ditemukan data utang untuk User ID: " + userId);
-            return;
-        }
-        
-        StringBuilder sb = new StringBuilder();
-        // Format Rupiah
-        NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        // Basic login validation (would typically involve hashing passwords and more robust checks)
+        User user = userDAO.getUserByUserId(username); // Using UserID as username for simplicity here
 
-        for (Utang utang : daftarUtang) {
-            sb.append("---------------------------------\n");
-            sb.append("ID Utang: ").append(utang.getUtangId()).append("\n");
-            sb.append("Pemberi Utang: ").append(utang.getCreditor()).append("\n");
-            sb.append("Jumlah Pokok: ").append(formatter.format(utang.getJumlah())).append("\n");
-            sb.append("Biaya/Bunga: ").append(formatter.format(utang.getBunga())).append("\n");
-            sb.append("Status: ").append(utang.getStatus()).append("\n");
-            sb.append("Jatuh Tempo: ").append(utang.getTanggalJatuhTempo()).append("\n\n");
-            sb.append(">> PERKIRAAN CICILAN PER BULAN: ")
-              .append(formatter.format(utang.getBiayaBulanan()))
-              .append("\n");
-            sb.append("---------------------------------\n\n");
+        if (user != null && user.getPassword().equals(password)) {
+            showAlert(Alert.AlertType.INFORMATION, "Login Successful", "Welcome, " + user.getNama() + "!");
+            openDashboard(user); // Navigate to Dashboard upon successful login
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Login Failed", "Invalid username or password.");
         }
-        
-        resultArea.setText(sb.toString());
     }
 
-    // Metode createAddUserScene(), createUtangScene(), handleAddUser(), handleSaveUtang(), showAlert(), dan main()
-    // tetap sama seperti kode sebelumnya. Pastikan untuk menyalinnya juga ke dalam file ini jika Anda
-    // memulai dari awal. Di bawah ini hanya placeholder singkat.
-    private Scene createAddUserScene() { return new Scene(new VBox(new Label("Placeholder Halaman Tambah Pengguna")), 400, 500); }
-    private Scene createUtangScene() { return new Scene(new VBox(new Label("Placeholder Halaman Tambah Utang")), 400, 550); }
-    private void handleAddUser(String u, String n, String um, String e, String p, String r) {}
-    private void handleSaveUtang(String ui, String uid, String j, String b, String c, LocalDate d) {}
+    /**
+     * Handles the register button action.
+     * For simplicity, this will open a new stage with a simple registration form.
+     */
+    private void handleRegister() {
+        Stage registerStage = new Stage();
+        registerStage.setTitle("Register New User");
+
+        TextField regUserIdField = new TextField();
+        regUserIdField.setPromptText("User ID");
+
+        TextField regNamaField = new TextField();
+        regNamaField.setPromptText("Name");
+
+        TextField regUmurField = new TextField();
+        regUmurField.setPromptText("Age");
+
+        TextField regEmailField = new TextField();
+        regEmailField.setPromptText("Email");
+
+        PasswordField regPasswordField = new PasswordField();
+        regPasswordField.setPromptText("Password");
+
+        ComboBox<String> regRoleComboBox = new ComboBox<>();
+        regRoleComboBox.getItems().addAll("Penanggung", "Tanggungan", "Admin");
+        regRoleComboBox.setPromptText("Select Role");
+        regRoleComboBox.getSelectionModel().selectFirst();
+
+        Button createAccountButton = new Button("Create Account");
+        createAccountButton.setOnAction(e -> {
+            try {
+                String userId = regUserIdField.getText();
+                String nama = regNamaField.getText();
+                int umur = Integer.parseInt(regUmurField.getText());
+                String email = regEmailField.getText();
+                String password = regPasswordField.getText();
+                String role = regRoleComboBox.getValue();
+
+                if (userId.isEmpty() || nama.isEmpty() || regUmurField.getText().isEmpty() ||
+                    email.isEmpty() || password.isEmpty() || role == null) {
+                    showAlert(Alert.AlertType.ERROR, "Registration Error", "Please fill in all fields.");
+                    return;
+                }
+
+                // Check if user ID already exists
+                if (userDAO.getUserByUserId(userId) != null) {
+                    showAlert(Alert.AlertType.ERROR, "Registration Error", "User ID already exists. Please choose another.");
+                    return;
+                }
+
+                User newUser = new User(userId, nama, umur, email, password, role);
+                userDAO.addUser(newUser);
+                showAlert(Alert.AlertType.INFORMATION, "Registration Success", "Account created for " + nama + " (" + role + ")! You can now log in.");
+                registerStage.close(); // Close registration window on success
+
+            } catch (NumberFormatException ex) {
+                showAlert(Alert.AlertType.ERROR, "Input Error", "Age must be a valid number.");
+            } catch (Exception ex) {
+                showAlert(Alert.AlertType.ERROR, "Registration Failed", "An error occurred during registration: " + ex.getMessage());
+                ex.printStackTrace();
+            }
+        });
+
+        VBox regLayout = new VBox(10);
+        regLayout.setPadding(new Insets(20));
+        regLayout.getChildren().addAll(
+                new Label("User ID:"), regUserIdField,
+                new Label("Name:"), regNamaField,
+                new Label("Age:"), regUmurField,
+                new Label("Email:"), regEmailField,
+                new Label("Password:"), regPasswordField,
+                new Label("Role:"), regRoleComboBox,
+                createAccountButton
+        );
+
+        Scene regScene = new Scene(regLayout, 350, 450);
+        registerStage.setScene(regScene);
+        registerStage.show();
+    }
+
+    /**
+     * Opens the main dashboard page after successful login.
+     * @param user The logged-in User object.
+     */
+    private void openDashboard(User user) {
+        DashboardPage dashboardPage = new DashboardPage(primaryStage, user);
+        Scene dashboardScene = dashboardPage.createScene();
+        primaryStage.setScene(dashboardScene);
+        primaryStage.centerOnScreen(); // Center the stage again
+    }
+
+    /**
+     * Helper method to show JavaFX Alert dialogs.
+     */
     private void showAlert(Alert.AlertType type, String title, String message) {
         Alert alert = new Alert(type);
         alert.setTitle(title);
@@ -151,5 +225,8 @@ public class App extends Application {
         alert.setContentText(message);
         alert.showAndWait();
     }
-    public static void main(String[] args) { launch(args); }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
 }

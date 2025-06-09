@@ -1,27 +1,38 @@
 package com.subwayit.model;
 
-import java.util.ArrayList; // For the list of Tanggungan
+import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Represents the main user or head of household in the SubwayIT system.
- * Extends the base User class and has full access to the system. [cite: 25]
- */
 public class Penanggung extends User {
-    // Attributes specific to Penanggung, based on Section 2.3.2 of the document
-    private int jumlahPemasukan; // 'Jumlah pemasukan' [cite: 151]
-    private int jumlahPengeluaran; // 'Jumlah pengeluaran' [cite: 151]
-    // 'Anggota tanggungan' is a list[cite: 151], best represented as a List of Tanggungan objects
+    private int jumlahPemasukan;
+    private int jumlahPengeluaran;
     private List<Tanggungan> anggotaTanggungan;
+    private String pekerjaan; // <--- ADD THIS ATTRIBUTE
 
-    // Constructor
-    // Calls the superclass (User) constructor first
     public Penanggung(String userId, String nama, int umur, String email, String password) {
-        // Penanggung role is fixed
         super(userId, nama, umur, email, password, "Penanggung");
-        this.jumlahPemasukan = 0; // Initialize to 0
-        this.jumlahPengeluaran = 0; // Initialize to 0
+        this.jumlahPemasukan = 0;
+        this.jumlahPengeluaran = 0;
         this.anggotaTanggungan = new ArrayList<>();
+        this.pekerjaan = ""; // Initialize
+    }
+
+    // Constructor to also set job (useful when retrieving from DB if job is stored)
+    public Penanggung(String userId, String nama, int umur, String email, String password, String pekerjaan) {
+        super(userId, nama, umur, email, password, "Penanggung");
+        this.jumlahPemasukan = 0;
+        this.jumlahPengeluaran = 0;
+        this.anggotaTanggungan = new ArrayList<>();
+        this.pekerjaan = pekerjaan;
+    }
+
+    // --- Add getter and setter for pekerjaan ---
+    public String getPekerjaan() {
+        return pekerjaan;
+    }
+
+    public void setPekerjaan(String pekerjaan) {
+        this.pekerjaan = pekerjaan;
     }
 
     // --- Operations (Methods) specific to Penanggung, based on Section 2.3.2 of the document ---

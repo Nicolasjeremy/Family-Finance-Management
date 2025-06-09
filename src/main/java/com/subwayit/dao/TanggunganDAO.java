@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -135,4 +136,38 @@ public class TanggunganDAO {
             e.printStackTrace();
         }
     }
+
+        public List<Tanggungan> getAllTanggunan() {
+        String sql = "SELECT tanggungan_id, posisi, nama, umur, pendidikan, pekerjaan FROM Tanggungan";
+        List<Tanggungan> tanggungans = new ArrayList<>();
+        try (Connection conn = DatabaseManager.connect();
+             Statement stmt = conn.createStatement(); // Make sure java.sql.Statement is imported
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                // You'll need to fetch the User details for these Tanggungan objects
+                // A simpler way is to fetch user first, then Tanggungan specific details.
+                // Or, if UserDAO has a getUserById method:
+                User user = new UserDAO().getUserByUserId(rs.getString("tanggungan_id"));
+                if (user != null) {
+                     Tanggungan tanggungan = new Tanggungan(
+                        user.getUserId(),
+                        user.getNama(),
+                        user.getUmur(),
+                        user.getEmail(),
+                        user.getPassword(),
+                        rs.getString("posisi"),
+                        rs.getString("pendidikan"),
+                        rs.getString("pekerjaan")
+                     );
+                     tanggungans.add(tanggungan);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting all Tanggungan: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return tanggungans;
+    }
+
+
 }
