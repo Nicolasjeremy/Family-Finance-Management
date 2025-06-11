@@ -57,12 +57,27 @@ public class App extends Application {
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
-        userDAO = new UserDAO();
-        primaryStage.setTitle("SubwayIT - Login/Register");
+        primaryStage.setTitle("SUBWAYIT - Family Finance Management");
 
-        DatabaseManager.createTables();
+        try {
+            // Initialize database and update schema
+            DatabaseManager.initializeDatabase();
+            DatabaseManager.updateDatabaseSchema();
+            
+            System.out.println("Database setup completed successfully.");
+        } catch (Exception e) {
+            System.err.println("Error setting up database: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Show error dialog to user
+            showModernAlert(Alert.AlertType.ERROR, "Database Error", 
+                           "Failed to initialize database. Please check if the application has write permissions.");
+        }
 
-        // Create the main login scene
+        // Initialize DAOs
+        this.userDAO = new UserDAO();
+
+        // Show login scene
         Scene loginScene = createLoginScene();
         primaryStage.setScene(loginScene);
         primaryStage.centerOnScreen();
