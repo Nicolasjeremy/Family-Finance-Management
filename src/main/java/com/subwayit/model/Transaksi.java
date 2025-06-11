@@ -1,6 +1,7 @@
 package com.subwayit.model;
 
-import java.time.LocalDate; // For handling dates more robustly
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter; // For formatting date for table display
 
 /**
  * Represents a financial transaction (income or expense).
@@ -32,8 +33,9 @@ public class Transaksi {
         this.deskripsi = deskripsi;
 
         // Derived properties for TableView display
-        this.transaksiIdAndDate = transaksiId + "\n" + tanggalTransaksi.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        this.payeeFrom = (jenis.equals("Pemasukan") ? "From: " : "To: ") + (jenis.equals("Pemasukan") ? "Source" : "Vendor"); // Placeholder, refine later
+        this.transaksiIdAndDate = transaksiId + "\n" + tanggalTransaksi.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        // Placeholder for payeeFrom, as discussed. Refine later with actual payee/sender info from DB.
+        this.payeeFrom = (jenis.equals("Pemasukan") ? "From: " : "To: ") + (jenis.equals("Pemasukan") ? "Source" : "Vendor");
     }
 
     // --- Getters and Setters ---
@@ -58,5 +60,5 @@ public class Transaksi {
 
     // Getters for TableView PropertyValueFactory
     public String getTransaksiIdAndDate() { return transaksiIdAndDate; }
-    public String getPayeeFrom() { return payeeFrom; } // Needs logic to determine actual payee/from
+    public String getPayeeFrom() { return payeeFrom; }
 }
