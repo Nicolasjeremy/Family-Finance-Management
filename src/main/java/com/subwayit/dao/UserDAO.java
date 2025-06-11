@@ -42,26 +42,25 @@ public class UserDAO {
      */
     public User getUserByUserId(String userId) {
         String sql = "SELECT user_id, nama, umur, e_mail, password, role FROM Pengguna WHERE user_id = ?";
-        User user = null;
         try (Connection conn = DatabaseManager.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, userId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                user = new User(
-                        rs.getString("user_id"),
-                        rs.getString("nama"),
-                        rs.getInt("umur"),
-                        rs.getString("e_mail"),
-                        rs.getString("password"),
-                        rs.getString("role")
+                return new User(
+                    rs.getString("user_id"),
+                    rs.getString("nama"),
+                    rs.getInt("umur"),
+                    rs.getString("e_mail"),
+                    rs.getString("password"),
+                    rs.getString("role")
                 );
             }
         } catch (SQLException e) {
-            System.err.println("Error getting user by ID: " + e.getMessage());
+            System.err.println("Error getting user: " + e.getMessage());
             e.printStackTrace();
         }
-        return user;
+        return null;
     }
 
     /**

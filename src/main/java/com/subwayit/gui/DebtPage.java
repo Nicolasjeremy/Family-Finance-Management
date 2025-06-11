@@ -3,7 +3,7 @@ package com.subwayit.gui;
 import com.subwayit.dao.UtangDAO;
 import com.subwayit.model.Utang;
 import com.subwayit.model.User;
-import com.subwayit.model.Penanggung; // Required to check if user is Penanggung for debt
+import com.subwayit.model.Tanggungan; // Required to check if user is Tanggungan for debt
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -135,13 +135,27 @@ public class DebtPage {
         addDebtBtn.setPadding(new Insets(10, 15, 10, 15));
         // Action for Add Debt Button
         addDebtBtn.setOnAction(e -> {
-            // Only Penanggung can add debt as per document's use case
-            if (loggedInUser instanceof Penanggung) {
-                AddDebtForm form = new AddDebtForm((Penanggung) loggedInUser);
+            // Debug: Print user information
+            System.out.println("User: " + loggedInUser.getNama());
+            System.out.println("User Role: " + loggedInUser.getRole());
+            System.out.println("Is Tanggungan? " + (loggedInUser instanceof Tanggungan));
+            
+            // Allow users with role "Tanggungan" to add debt
+            if (loggedInUser != null && "Tanggungan".equals(loggedInUser.getRole())) {
+                // Untuk sementara, buat Tanggungan object dari User
+                Tanggungan tempTanggungan = new Tanggungan(
+                    loggedInUser.getUserId(), 
+                    loggedInUser.getNama(), 
+                    loggedInUser.getUmur(), 
+                    loggedInUser.getEmail(), 
+                    loggedInUser.getPassword(), 
+                    "Anak", "SMA", "Pelajar"
+                );
+                AddDebtForm form = new AddDebtForm(tempTanggungan);
                 form.display(); // Show the modal form
                 refreshDebtTable(); // Refresh table data after form closes
             } else {
-                showAlert(Alert.AlertType.WARNING, "Access Denied", "Only the Penanggung can add new debt.");
+                showAlert(Alert.AlertType.WARNING, "Access Denied", "Only users with Tanggungan role can add new debt.");
             }
         });
 
@@ -169,13 +183,13 @@ public class DebtPage {
      * Refreshes the data displayed in the debt table by querying the database.
      */
     private void refreshDebtTable() {
-        if (loggedInUser instanceof Penanggung) { // Only Penanggung has associated debt
+        if (loggedInUser instanceof Tanggungan) { // Only Tanggungan has associated debt
             ObservableList<Utang> debts = FXCollections.observableArrayList(
-                utangDAO.getAllUtangForPenanggung(loggedInUser.getUserId())
+                utangDAO.getAllUtangForTanggungan(loggedInUser.getUserId())
             );
             debtTable.setItems(debts);
         } else {
-            // If the logged-in user is not a Penanggung, show empty list or a message
+            // If the logged-in user is not a Tanggungan, show empty list or a message
             debtTable.setItems(FXCollections.emptyObservableList());
             // Optionally, show a message in the table or disable add debt button for Tanggungan/Admin
         }

@@ -2,7 +2,7 @@ package com.subwayit.gui;
 
 import com.subwayit.dao.UtangDAO;
 import com.subwayit.model.Utang;
-import com.subwayit.model.Penanggung; // Debt is managed by Penanggung
+import com.subwayit.model.Tanggungan; // Debt is managed by Tanggungan
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -24,7 +24,7 @@ import java.util.UUID; // To generate unique IDs
 public class AddDebtForm {
 
     private Stage dialogStage;
-    private Penanggung currentPenanggung; // The Penanggung user managing the debt
+    private Tanggungan currentTanggungan; // The Tanggungan user managing the debt
     private UtangDAO utangDAO;
 
     // Form fields
@@ -34,8 +34,8 @@ public class AddDebtForm {
     private DatePicker dueDateField;
     private TextField statusField; // For initial status
 
-    public AddDebtForm(Penanggung penanggung) {
-        this.currentPenanggung = penanggung;
+    public AddDebtForm(Tanggungan Tanggungan) {
+        this.currentTanggungan = Tanggungan;
         this.utangDAO = new UtangDAO();
     }
 
@@ -145,15 +145,14 @@ public class AddDebtForm {
         }
 
         String utangId = UUID.randomUUID().toString();
-        String penanggungId = currentPenanggung.getUserId(); // The logged-in Penanggung's ID
+        String userId = currentTanggungan.getUserId(); // Gunakan getUserId()
 
-        Utang newUtang = new Utang(utangId, penanggungId, amount, bunga, dueDate, status, creditor);
+        Utang newUtang = new Utang(utangId, userId, amount, bunga, dueDate, status, creditor);
 
         try {
             utangDAO.addUtang(newUtang);
             showAlert(Alert.AlertType.INFORMATION, "Success", "Debt added successfully!");
             dialogStage.close();
-            // TODO: Refresh debt table in DebtPage (this is handled by refreshDebtTable() call in DebtPage)
         } catch (Exception e) {
             showAlert(Alert.AlertType.ERROR, "Database Error", "Failed to add debt: " + e.getMessage());
             e.printStackTrace();
