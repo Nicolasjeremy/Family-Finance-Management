@@ -7,14 +7,7 @@ import com.subwayit.model.User;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.ToggleButton;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -29,6 +22,7 @@ public class AddTransactionForm {
     private Stage dialogStage;
     private User currentUser;
     private TransaksiDAO transaksiDAO;
+    private Transaksi editingTransaksi;          // ← untuk mode edit
 
     private DatePicker datePicker;
     private TextField amountField;
@@ -39,200 +33,209 @@ public class AddTransactionForm {
     private ToggleButton unexpectedEarningBtn;
     private ToggleButton unexpectedSpendingBtn;
 
+    /** Konstruktor untuk menambah transaksi baru */
     public AddTransactionForm(User user) {
         this.currentUser = user;
         this.transaksiDAO = new TransaksiDAO();
     }
 
+    /** Konstruktor untuk edit: terima objek Transaksi yang akan diubah */
+    public AddTransactionForm(User user, Transaksi transaksi) {
+        this(user);
+        this.editingTransaksi = transaksi;
+    }
+
+    /** Tampilkan form (modal) */
     public void display() {
         dialogStage = new Stage();
         dialogStage.initModality(Modality.APPLICATION_MODAL);
-        dialogStage.setTitle("Add New Transaction");
+        dialogStage.setTitle(editingTransaksi == null ? "Add New Transaction" : "Edit Transaction");
 
-        // --- Form Components ---
+        // --- Komponen Form ---
 
-        // Date Input
-        datePicker = new DatePicker(LocalDate.now());
+        datePicker = new DatePicker();
         datePicker.setPromptText("Date");
 
-        // Amount Input
         amountField = new TextField();
         amountField.setPromptText("Amount");
-        amountField.setTextFormatter(new javafx.scene.control.TextFormatter<>(change -> {
-            if (change.getText().matches("[0-9]*\\.?[0-9]*")) {
-                return change;
-            }
-            return null;
-        }));
+        amountField.setTextFormatter(new TextFormatter<>(c ->
+            c.getText().matches("[0-9]*\\.?[0-9]*") ? c : null
+        ));
 
-        // Description Input
         descriptionArea = new TextArea();
         descriptionArea.setPromptText("Description");
         descriptionArea.setPrefRowCount(3);
         descriptionArea.setWrapText(true);
 
-        // Category Selection (Toggle Buttons based on image)
         categoryToggleGroup = new ToggleGroup();
-
-        monthlyEarningBtn = new ToggleButton("Monthly Earning");
-        monthlySpendingBtn = new ToggleButton("Monthly Spending");
+        monthlyEarningBtn    = new ToggleButton("Monthly Earning");
+        monthlySpendingBtn   = new ToggleButton("Monthly Spending");
         unexpectedEarningBtn = new ToggleButton("Unexpected Earning");
-        unexpectedSpendingBtn = new ToggleButton("Unexpected Spending");
+        unexpectedSpendingBtn= new ToggleButton("Unexpected Spending");
 
-        // Assign toggle group
         monthlyEarningBtn.setToggleGroup(categoryToggleGroup);
         monthlySpendingBtn.setToggleGroup(categoryToggleGroup);
         unexpectedEarningBtn.setToggleGroup(categoryToggleGroup);
         unexpectedSpendingBtn.setToggleGroup(categoryToggleGroup);
 
-        // Style for toggle buttons
-        String toggleBtnStyle = "-fx-background-color: #F0F0F0; -fx-text-fill: #333333; -fx-font-size: 12px; -fx-padding: 8 15; -fx-background-radius: 3;";
-        String selectedToggleBtnStyle = "-fx-background-color: #8BC34A; -fx-text-fill: white; -fx-font-weight: bold;";
+        String baseStyle     = "-fx-background-color: #F0F0F0; -fx-text-fill: #333; -fx-font-size:12; -fx-padding:8 15; -fx-background-radius:3;";
+        String selectedStyle = "-fx-background-color: #8BC34A; -fx-text-fill: white; -fx-font-weight: bold;";
 
-        monthlyEarningBtn.setStyle(toggleBtnStyle);
-        monthlySpendingBtn.setStyle(toggleBtnStyle);
-        unexpectedEarningBtn.setStyle(toggleBtnStyle);
-        unexpectedSpendingBtn.setStyle(toggleBtnStyle);
+        monthlyEarningBtn.setStyle(baseStyle);
+        monthlySpendingBtn.setStyle(baseStyle);
+        unexpectedEarningBtn.setStyle(baseStyle);
+        unexpectedSpendingBtn.setStyle(baseStyle);
 
-        // Listener to update styles when toggle selection changes
-        categoryToggleGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
-            if (oldToggle != null) {
-                ((ToggleButton) oldToggle).setStyle(toggleBtnStyle); // Cast to ToggleButton
-            }
-            if (newToggle != null) {
-                ((ToggleButton) newToggle).setStyle(selectedToggleBtnStyle); // Cast to ToggleButton
-            }
+        categoryToggleGroup.selectedToggleProperty().addListener((obs, oldT, newT) -> {
+            if (oldT != null) ((ToggleButton)oldT).setStyle(baseStyle);
+            if (newT != null) ((ToggleButton)newT).setStyle(selectedStyle);
         });
 
-        HBox categoryButtonsRow1 = new HBox(10, monthlyEarningBtn, monthlySpendingBtn);
-        HBox categoryButtonsRow2 = new HBox(10, unexpectedEarningBtn, unexpectedSpendingBtn);
-        VBox categorySelectionLayout = new VBox(10, categoryButtonsRow1, categoryButtonsRow2);
+        HBox row1 = new HBox(10, monthlyEarningBtn, monthlySpendingBtn);
+        HBox row2 = new HBox(10, unexpectedEarningBtn, unexpectedSpendingBtn);
+        VBox categoryBox = new VBox(10, row1, row2);
+        categoryBox.setPadding(new Insets(5,0,5,0));
 
-        // Default selection
-        monthlyEarningBtn.setSelected(true);
+        // Jika edit, isi ulang field dari objek editingTransaksi
+        if (editingTransaksi != null) {
+            prefillForm(editingTransaksi);
+        } else {
+            // default selection bila tambah
+            monthlyEarningBtn.setSelected(true);
+            monthlyEarningBtn.setStyle(selectedStyle);
+            datePicker.setValue(LocalDate.now());
+        }
 
+        // Tombol submit & cancel
+        Button cancelBtn = new Button("Cancel");
+        cancelBtn.setStyle("-fx-background-color:#F44336; -fx-text-fill:white; -fx-background-radius:5;");
+        cancelBtn.setOnAction(e -> dialogStage.close());
 
-        // Control Buttons
-        Button cancelButton = new Button("Cancel");
-        cancelButton.setStyle("-fx-background-color: #F44336; -fx-text-fill: white; -fx-background-radius: 5;");
-        cancelButton.setOnAction(e -> dialogStage.close());
+        Button submitBtn = new Button("Submit");
+        submitBtn.setStyle("-fx-background-color:#4CAF50; -fx-text-fill:white; -fx-background-radius:5;");
+        submitBtn.setOnAction(e -> handleSubmit());
 
-        Button submitButton = new Button("Submit");
-        submitButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-background-radius: 5;");
-        submitButton.setOnAction(e -> handleSubmit());
+        HBox btnBox = new HBox(15, cancelBtn, submitBtn);
+        btnBox.setAlignment(Pos.CENTER_RIGHT);
 
-        HBox buttonLayout = new HBox(15);
-        buttonLayout.setAlignment(Pos.CENTER_RIGHT);
-        buttonLayout.getChildren().addAll(cancelButton, submitButton);
+        // Layout grid
+        GridPane grid = new GridPane();
+        grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20));
+        grid.add(new Label("Date:"),         0, 0);
+        grid.add(datePicker,                 1, 0);
+        grid.add(new Label("Amount:"),       0, 1);
+        grid.add(amountField,                1, 1);
+        grid.add(new Label("Description:"),  0, 2);
+        grid.add(descriptionArea,            1, 2);
+        grid.add(new Label("Category:"),     0, 3);
+        grid.add(categoryBox,                1, 3);
 
-        // --- Form Layout ---
-        GridPane formGrid = new GridPane();
-        formGrid.setHgap(10);
-        formGrid.setVgap(10);
-        formGrid.setPadding(new Insets(20));
+        VBox layout = new VBox(20, grid, btnBox);
+        layout.setPadding(new Insets(10));
+        layout.setStyle("-fx-background-color: #FFF;");
 
-        formGrid.add(new Label("Date:"), 0, 0);
-        formGrid.add(datePicker, 1, 0);
-
-        formGrid.add(new Label("Amount:"), 0, 1);
-        formGrid.add(amountField, 1, 1);
-
-        formGrid.add(new Label("Description:"), 0, 2);
-        formGrid.add(descriptionArea, 1, 2);
-
-        formGrid.add(new Label("Category:"), 0, 3);
-        formGrid.add(categorySelectionLayout, 1, 3);
-
-        // --- Main Dialog Layout ---
-        VBox dialogLayout = new VBox(20);
-        dialogLayout.setPadding(new Insets(10));
-        dialogLayout.setAlignment(Pos.CENTER);
-        dialogLayout.setStyle("-fx-background-color: #FFFFFF;");
-        dialogLayout.getChildren().addAll(formGrid, buttonLayout);
-
-        Scene scene = new Scene(dialogLayout);
-        dialogStage.setScene(scene);
+        dialogStage.setScene(new Scene(layout));
         dialogStage.showAndWait();
     }
 
-    /**
-     * Handles the submission of the transaction form.
-     */
-    private void handleSubmit() {
-        String userId = currentUser.getUserId();
-        String transaksiId = UUID.randomUUID().toString();
-        LocalDate tanggalTransaksi = datePicker.getValue();
-        String description = descriptionArea.getText();
-        String amountText = amountField.getText();
+    /** Pre‐fill semua field dari objek Transaksi yang diedit */
+    private void prefillForm(Transaksi t) {
+        datePicker.setValue(t.getTanggalTransaksi());
+        amountField.setText(String.valueOf(t.getNominal()));
+        descriptionArea.setText(t.getDeskripsi());
 
-        if (tanggalTransaksi == null || amountText.isEmpty() || description.isEmpty() || categoryToggleGroup.getSelectedToggle() == null) {
-            showAlert(Alert.AlertType.ERROR, "Input Error", "Please fill in all fields and select a category.");
+        // Pilih toggle sesuai jenis & rutin
+        boolean rutin = t.isRutin();
+        if (t.getJenis().equalsIgnoreCase("Pemasukan") && rutin) {
+            monthlyEarningBtn.setSelected(true);
+            monthlyEarningBtn.setStyle("-fx-background-color: #8BC34A; -fx-text-fill:white;");
+        }
+        else if (t.getJenis().equalsIgnoreCase("Pengeluaran") && rutin) {
+            monthlySpendingBtn.setSelected(true);
+            monthlySpendingBtn.setStyle("-fx-background-color: #8BC34A; -fx-text-fill:white;");
+        }
+        else if (t.getJenis().equalsIgnoreCase("Pemasukan")) {
+            unexpectedEarningBtn.setSelected(true);
+            unexpectedEarningBtn.setStyle("-fx-background-color: #8BC34A; -fx-text-fill:white;");
+        }
+        else {
+            unexpectedSpendingBtn.setSelected(true);
+            unexpectedSpendingBtn.setStyle("-fx-background-color: #8BC34A; -fx-text-fill:white;");
+        }
+    }
+
+    /** Simpan data baru atau update bila edit */
+    private void handleSubmit() {
+        LocalDate date = datePicker.getValue();
+        String desc = descriptionArea.getText().trim();
+        String amtText = amountField.getText().trim();
+        ToggleButton sel = (ToggleButton) categoryToggleGroup.getSelectedToggle();
+
+        if (date == null || desc.isEmpty() || amtText.isEmpty() || sel == null) {
+            showAlert(Alert.AlertType.ERROR, "Input Error", "Please complete all fields & select a category.");
             return;
         }
 
         double nominal;
         try {
-            nominal = Double.parseDouble(amountText);
-            if (nominal <= 0) {
-                showAlert(Alert.AlertType.ERROR, "Input Error", "Amount must be a positive number.");
-                return;
-            }
-        } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.ERROR, "Input Error", "Amount must be a valid number.");
+            nominal = Double.parseDouble(amtText);
+            if (nominal <= 0) throw new NumberFormatException();
+        } catch (NumberFormatException ex) {
+            showAlert(Alert.AlertType.ERROR, "Input Error", "Amount must be a positive number.");
             return;
         }
 
-        String jenis = "";
-        boolean isRutin = false;
-        String kategori = "";
-        ToggleButton selectedCategoryBtn = (ToggleButton) categoryToggleGroup.getSelectedToggle();
-
-        if (selectedCategoryBtn == monthlyEarningBtn) {
-            jenis = "Pemasukan";
-            isRutin = true;
-            kategori = "Gaji";
-        } else if (selectedCategoryBtn == monthlySpendingBtn) {
-            jenis = "Pengeluaran";
-            isRutin = true;
-            kategori = "Rumah Tangga";
-        } else if (selectedCategoryBtn == unexpectedEarningBtn) {
-            jenis = "Pemasukan";
-            isRutin = false;
-            kategori = "Tak Terduga";
-        } else if (selectedCategoryBtn == unexpectedSpendingBtn) {
-            jenis = "Pengeluaran";
-            isRutin = false;
-            kategori = "Tak Terduga";
+        // Tentukan jenis, kategori, dan isRutin
+        String jenis;
+        boolean isRutin;
+        String kategori;
+        if (sel == monthlyEarningBtn) {
+            jenis = "Pemasukan";    isRutin = true;  kategori = "Gaji";
+        }
+        else if (sel == monthlySpendingBtn) {
+            jenis = "Pengeluaran";  isRutin = true;  kategori = "Rumah Tangga";
+        }
+        else if (sel == unexpectedEarningBtn) {
+            jenis = "Pemasukan";    isRutin = false; kategori = "Tak Terduga";
+        }
+        else {
+            jenis = "Pengeluaran";  isRutin = false; kategori = "Tak Terduga";
         }
 
-        Transaksi newTransaksi = new Transaksi(
-            transaksiId,
-            userId,
-            jenis,
-            kategori,
-            nominal,
-            tanggalTransaksi,
-            "",
-            isRutin,
-            description
-        );
-
-        try {
-            transaksiDAO.addTransaksi(newTransaksi);
+        if (editingTransaksi == null) {
+            // Mode ADD
+            Transaksi t = new Transaksi(
+                UUID.randomUUID().toString(),
+                currentUser.getUserId(),
+                jenis, kategori,
+                nominal,
+                date,
+                "",
+                isRutin,
+                desc
+            );
+            transaksiDAO.addTransaksi(t);
             showAlert(Alert.AlertType.INFORMATION, "Success", "Transaction added successfully!");
-            dialogStage.close();
-            // TODO: Refresh dashboard table data if needed (already implemented in DashboardPage now)
-        } catch (Exception e) {
-            showAlert(Alert.AlertType.ERROR, "Database Error", "Failed to add transaction: " + e.getMessage());
-            e.printStackTrace();
+        } else {
+            // Mode EDIT: ubah field dan simpan
+            editingTransaksi.setTanggalTransaksi(date);
+            editingTransaksi.setDeskripsi(desc);
+            editingTransaksi.setNominal(nominal);
+            editingTransaksi.setJenis(jenis);
+            editingTransaksi.setRutin(isRutin);
+            editingTransaksi.setKategori(kategori);
+            transaksiDAO.updateTransaksi(editingTransaksi);
+            showAlert(Alert.AlertType.INFORMATION, "Success", "Transaction updated successfully!");
         }
+
+        dialogStage.close();
     }
 
-    private void showAlert(Alert.AlertType type, String title, String message) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+    private void showAlert(Alert.AlertType type, String title, String msg) {
+        Alert a = new Alert(type);
+        a.setTitle(title);
+        a.setHeaderText(null);
+        a.setContentText(msg);
+        a.showAndWait();
     }
 }

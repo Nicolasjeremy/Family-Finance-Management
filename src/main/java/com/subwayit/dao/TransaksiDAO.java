@@ -4,22 +4,24 @@ import com.subwayit.database.DatabaseManager;
 import com.subwayit.model.Transaksi;
 
 import java.sql.Connection;
-import java.sql.Date; // For converting LocalDate to java.sql.Date
+import java.sql.Date;             // Untuk mengkonversi LocalDate ke java.sql.Date
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO untuk mengelola operasi CRUD terhadap tabel Transaksi.
+ */
 public class TransaksiDAO {
 
     /**
      * Inserts a new transaction into the Transaksi table.
-     * @param transaksi The Transaksi object to insert.
      */
     public void addTransaksi(Transaksi transaksi) {
-        String sql = "INSERT INTO Transaksi(transaksi_id, user_id, jenis, kategori, nominal, tanggal_transaksi, bukti_transaksi, is_rutin, deskripsi) VALUES(?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO Transaksi(transaksi_id, user_id, jenis, kategori, nominal, tanggal_transaksi, bukti_transaksi, is_rutin, deskripsi) "
+                   + "VALUES(?,?,?,?,?,?,?,?,?)";
         try (Connection conn = DatabaseManager.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, transaksi.getTransaksiId());
@@ -27,7 +29,7 @@ public class TransaksiDAO {
             pstmt.setString(3, transaksi.getJenis());
             pstmt.setString(4, transaksi.getKategori());
             pstmt.setDouble(5, transaksi.getNominal());
-            pstmt.setDate(6, Date.valueOf(transaksi.getTanggalTransaksi())); // Convert LocalDate to java.sql.Date
+            pstmt.setDate(6, Date.valueOf(transaksi.getTanggalTransaksi()));
             pstmt.setString(7, transaksi.getBuktiTransaksi());
             pstmt.setBoolean(8, transaksi.isRutin());
             pstmt.setString(9, transaksi.getDeskripsi());
@@ -40,12 +42,11 @@ public class TransaksiDAO {
     }
 
     /**
-     * Retrieves all transactions for a specific user.
-     * @param userId The ID of the user whose transactions to retrieve.
-     * @return A list of Transaksi objects.
+     * Retrieves all transactions for a specific user, ordered by date descending.
      */
     public List<Transaksi> getAllTransactionsForUser(String userId) {
-        String sql = "SELECT transaksi_id, user_id, jenis, kategori, nominal, tanggal_transaksi, bukti_transaksi, is_rutin, deskripsi FROM Transaksi WHERE user_id = ? ORDER BY tanggal_transaksi DESC";
+        String sql = "SELECT transaksi_id, user_id, jenis, kategori, nominal, tanggal_transaksi, bukti_transaksi, is_rutin, deskripsi "
+                   + "FROM Transaksi WHERE user_id = ? ORDER BY tanggal_transaksi DESC";
         List<Transaksi> transactions = new ArrayList<>();
         try (Connection conn = DatabaseManager.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -53,15 +54,15 @@ public class TransaksiDAO {
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 transactions.add(new Transaksi(
-                        rs.getString("transaksi_id"),
-                        rs.getString("user_id"),
-                        rs.getString("jenis"),
-                        rs.getString("kategori"),
-                        rs.getDouble("nominal"),
-                        rs.getDate("tanggal_transaksi").toLocalDate(), // Convert java.sql.Date to LocalDate
-                        rs.getString("bukti_transaksi"),
-                        rs.getBoolean("is_rutin"),
-                        rs.getString("deskripsi")
+                    rs.getString("transaksi_id"),
+                    rs.getString("user_id"),
+                    rs.getString("jenis"),
+                    rs.getString("kategori"),
+                    rs.getDouble("nominal"),
+                    rs.getDate("tanggal_transaksi").toLocalDate(),
+                    rs.getString("bukti_transaksi"),
+                    rs.getBoolean("is_rutin"),
+                    rs.getString("deskripsi")
                 ));
             }
         } catch (SQLException e) {
@@ -71,5 +72,52 @@ public class TransaksiDAO {
         return transactions;
     }
 
-    // Add update and delete methods for Transaksi later.
+    /**
+     * Updates an existing transaction in the Transaksi table.
+     * Matches by transaksi_id.
+     */
+    public void updateTransaksi(Transaksi transaksi) {
+        String sql = "UPDATE Transaksi SET jenis = ?, kategori = ?, nominal = ?, tanggal_transaksi = ?, "
+                   + "bukti_transaksi = ?, is_rutin = ?, deskripsi = ? WHERE transaksi_id = ?";
+        try (Connection conn = DatabaseManager.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, transaksi.getJenis());
+            pstmt.setString(2, transaksi.getKategori());
+            pstmt.setDouble(3, transaksi.getNominal());
+            pstmt.setDate(4, Date.valueOf(transaksi.getTanggalTransaksi()));
+            pstmt.setString(5, transaksi.getBuktiTransaksi());
+            pstmt.setBoolean(6, transaksi.isRutin());
+            pstmt.setString(7, transaksi.getDeskripsi());
+            pstmt.setString(8, transaksi.getTransaksiId());
+            int affected = pstmt.executeUpdate();
+            if (affected > 0) {
+                System.out.println("Transaction updated successfully: " + transaksi.getTransaksiId());
+            } else {
+                System.out.println("No transaction found with ID: " + transaksi.getTransaksiId());
+            }
+        } catch (SQLException e) {
+            System.err.println("Error updating transaction: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Deletes a transaction from the Transaksi table by its ID.
+     */
+    public void deleteTransaksi(String transaksiId) {
+        String sql = "DELETE FROM Transaksi WHERE transaksi_id = ?";
+        try (Connection conn = DatabaseManager.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, transaksiId);
+            int affected = pstmt.executeUpdate();
+            if (affected > 0) {
+                System.out.println("Transaction deleted successfully: " + transaksiId);
+            } else {
+                System.out.println("No transaction found with ID: " + transaksiId);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error deleting transaction: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }

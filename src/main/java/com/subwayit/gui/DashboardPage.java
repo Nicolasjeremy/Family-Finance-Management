@@ -9,53 +9,45 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
+import java.time.LocalDate;
+import java.util.List;
 
 public class DashboardPage {
 
-    private Stage primaryStage; // Reference to the main stage
-    private User loggedInUser; // To hold the user who logged in
-    private TransaksiDAO transaksiDAO; // DAO for fetching transactions
-    private TableView<Transaksi> transactionTable; // Declare as a class member to refresh it
+    private Stage primaryStage;
+    private User loggedInUser;
+    private TransaksiDAO transaksiDAO;
+    private TableView<Transaksi> transactionTable;
 
-    // Constructor to receive the primary stage and logged-in user
+    private Label totalTransactionValue = new Label();
+    private Label thisMonthSpendingValue = new Label();
+    private Label thisMonthEarningValue = new Label();
+    private Label cashflowValue = new Label();
+
     public DashboardPage(Stage primaryStage, User user) {
         this.primaryStage = primaryStage;
         this.loggedInUser = user;
-        this.transaksiDAO = new TransaksiDAO(); // Initialize TransaksiDAO
+        this.transaksiDAO = new TransaksiDAO();
     }
 
     public Scene createScene() {
-        // --- Top Navigation Bar ---
         HBox topNav = createTopNavigationBar();
-
-        // --- Main Content Area ---
         VBox mainContent = createMainContentArea();
 
-        // --- Root Layout ---
         BorderPane root = new BorderPane();
         root.setTop(topNav);
         root.setCenter(mainContent);
-        root.setStyle("-fx-background-color: #F0F0F0;"); // Slightly lighter background
+        root.setStyle("-fx-background-color: #F0F0F0;");
 
-        Scene scene = new Scene(root, 1000, 700); // Adjust size as needed
-        return scene;
+        return new Scene(root, 1000, 700);
     }
-
 
     private HBox createTopNavigationBar() {
         HBox navBar = new HBox(15);
@@ -70,35 +62,18 @@ public class DashboardPage {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
+        // Buttons...
         Button homeBtn = createNavLink("Home");
-        homeBtn.setOnAction(e -> {
-            // Clicking Home on Dashboard should just refresh or stay
-            // For now, let's keep it consistent, maybe return to initial dashboard state
-            DashboardPage dashboardPage = new DashboardPage(primaryStage, loggedInUser);
-            primaryStage.setScene(dashboardPage.createScene());
-            primaryStage.centerOnScreen();
-        });
-
+        homeBtn.setOnAction(e -> primaryStage.setScene(createScene()));
         Button dashboardsBtn = createNavLink("Dashboards");
-        dashboardsBtn.setOnAction(e -> {
-            // Same as Home for now
-            DashboardPage dashboardPage = new DashboardPage(primaryStage, loggedInUser);
-            primaryStage.setScene(dashboardPage.createScene());
-            primaryStage.centerOnScreen();
-        });
-
+        dashboardsBtn.setOnAction(e -> primaryStage.setScene(createScene()));
         Button membersBtn = createNavLink("Members");
-        membersBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 14px;"); // Normal style
-        // --- ACTION FOR MEMBERS BUTTON ---
         membersBtn.setOnAction(e -> {
-            MembersPage membersPage = new MembersPage(primaryStage, loggedInUser);
-            primaryStage.setScene(membersPage.createScene());
-            primaryStage.centerOnScreen();
+            MembersPage mp = new MembersPage(primaryStage, loggedInUser);
+            primaryStage.setScene(mp.createScene());
         });
-
-
         Button debtBtn = createNavLink("Debt");
-        // Add action for Debt button later
+        // TODO: handler Debt
 
         navBar.getChildren().addAll(logo, spacer, homeBtn, dashboardsBtn, membersBtn, debtBtn);
         return navBar;
@@ -107,140 +82,168 @@ public class DashboardPage {
     private Button createNavLink(String text) {
         Button btn = new Button(text);
         btn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 14px;");
-        // Add action for navigation later
         return btn;
     }
 
     private VBox createMainContentArea() {
-        VBox content = new VBox(20); // Spacing between sections
+        VBox content = new VBox(20);
         content.setPadding(new Insets(20));
 
-        // --- Greeting and Action Buttons ---
-        HBox headerSection = new HBox(10); // Spacing between greeting and buttons
-        headerSection.setAlignment(Pos.CENTER_LEFT);
-        Label greetingLabel = new Label("Hi " + loggedInUser.getNama());
-        greetingLabel.setFont(Font.font("Arial", 28));
-        greetingLabel.setTextFill(Color.web("#333333")); // Dark text
+        // Header
+        HBox header = new HBox(10);
+        header.setAlignment(Pos.CENTER_LEFT);
+        Label hi = new Label("Hi " + loggedInUser.getNama());
+        hi.setFont(Font.font(28));
+        hi.setTextFill(Color.web("#333333"));
+        Label desc = new Label("This is the transaction from the past 30 days");
+        desc.setFont(Font.font(14));
+        desc.setTextFill(Color.GRAY);
+        VBox vb = new VBox(5, hi, desc);
+        Region space = new Region(); HBox.setHgrow(space, Priority.ALWAYS);
 
-        Label transactionSummaryLabel = new Label("This is the transaction from the past 30 days");
-        transactionSummaryLabel.setFont(Font.font("Arial", 14));
-        transactionSummaryLabel.setTextFill(Color.GRAY);
-
-        VBox greetingBox = new VBox(5, greetingLabel, transactionSummaryLabel);
-
-        Region headerSpacer = new Region(); // Spacer to push buttons to right
-        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
-
-        Button viewReportsBtn = new Button("View reports");
-        viewReportsBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 5;");
-        viewReportsBtn.setPadding(new Insets(10, 15, 10, 15));
-
-        Button addTransactionBtn = new Button("Add transaction");
-        addTransactionBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 5;");
-        addTransactionBtn.setPadding(new Insets(10, 15, 10, 15));
-        // Action for Add Transaction Button:
-        addTransactionBtn.setOnAction(e -> {
+        Button viewR = new Button("View reports");
+        viewR.setStyle("-fx-background-color:#4CAF50;-fx-text-fill:white;"); viewR.setPadding(new Insets(10));
+        Button addT = new Button("Add transaction");
+        addT.setStyle("-fx-background-color:#4CAF50;-fx-text-fill:white;"); addT.setPadding(new Insets(10));
+        addT.setOnAction(e -> {
+            // **Edit** form must accept Transaksi for editing
             AddTransactionForm form = new AddTransactionForm(loggedInUser);
-            form.display(); // Show the modal form
-            refreshTransactionTable(); // Refresh table data after form closes
+            form.display(); // on save, calls addTransaksi or updateTransaksi
+            refreshTransactionTable();
+            updateFinancialSummary();
         });
 
-        headerSection.getChildren().addAll(greetingBox, headerSpacer, viewReportsBtn, addTransactionBtn);
+        header.getChildren().addAll(vb, space, viewR, addT);
 
-
-        // --- Summary Cards ---
-        HBox summaryCards = new HBox(20); // Spacing between cards
-        summaryCards.setAlignment(Pos.CENTER_LEFT);
-        summaryCards.getChildren().addAll(
-            createSummaryCard("Total transaction", "135", ""),
-            createSummaryCard("This month spending", "$12,500.04", ""),
-            createSummaryCard("This month earning", "$20,000.02", ""),
-            createSummaryCard("Cashflow", "$7500.02", "chart_placeholder")
+        // Summary cards
+        HBox summary = new HBox(20);
+        summary.getChildren().addAll(
+            createSummaryCard("Total transaction", totalTransactionValue),
+            createSummaryCard("This month spending", thisMonthSpendingValue),
+            createSummaryCard("This month earning", thisMonthEarningValue),
+            createSummaryCard("Cashflow", cashflowValue)
         );
 
+        // Table with Actions column
+        transactionTable = createTransactionTable();
+        refreshTransactionTable();
+        updateFinancialSummary();
 
-        // --- Transaction List ---
-        transactionTable = createTransactionTable(); // Assign to the class member variable
-        refreshTransactionTable(); // Call to load initial data when the dashboard is created
-
-        content.getChildren().addAll(headerSection, summaryCards, new Label("Transaction List"), transactionTable);
-
-        
-
+        content.getChildren().addAll(header, summary, new Label("Transaction List"), transactionTable);
         return content;
     }
 
-    /**
-     * Refreshes the data displayed in the transaction table by querying the database.
-     */
-    private void refreshTransactionTable() {
-        if (loggedInUser != null && loggedInUser.getUserId() != null) {
-            ObservableList<Transaksi> transactions = FXCollections.observableArrayList(
-                transaksiDAO.getAllTransactionsForUser(loggedInUser.getUserId())
-            );
-            transactionTable.setItems(transactions);
-        }
-    }
-
-    private VBox createSummaryCard(String title, String value, String chartPlaceholder) {
+    private VBox createSummaryCard(String title, Label value) {
         VBox card = new VBox(5);
         card.setAlignment(Pos.CENTER_LEFT);
         card.setPadding(new Insets(15));
-        card.setStyle("-fx-background-color: white; -fx-background-radius: 5; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 0);");
-        card.setPrefWidth(220); // Fixed width for cards
-
-        Label titleLabel = new Label(title);
-        titleLabel.setFont(Font.font("Arial", 12));
-        titleLabel.setTextFill(Color.GRAY);
-
-        Label valueLabel = new Label(value);
-        valueLabel.setFont(Font.font("Arial", 24));
-        valueLabel.setTextFill(Color.web("#333333"));
-
-        card.getChildren().addAll(titleLabel, valueLabel);
-
-        if (!chartPlaceholder.isEmpty()) {
-            // You'd add a small chart component here, e.g., an ImageView for a static chart image
-            // For now, just a placeholder label
-            Label chart = new Label("Chart Placeholder");
-            chart.setTextFill(Color.LIGHTGRAY);
-            card.getChildren().add(chart);
-        }
-
+        card.setStyle("-fx-background-color:white; -fx-background-radius:5; -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.1),10,0,0,0);");
+        card.setPrefWidth(220);
+        Label t = new Label(title); t.setFont(Font.font(12)); t.setTextFill(Color.GRAY);
+        value.setFont(Font.font(24)); value.setTextFill(Color.web("#333333"));
+        card.getChildren().addAll(t, value);
         return card;
     }
 
     private TableView<Transaksi> createTransactionTable() {
         TableView<Transaksi> table = new TableView<>();
-        table.setPrefHeight(300); // Set preferred height for the table
+        table.setPrefHeight(300);
 
-        // Transaction ID/Date column
-        TableColumn<Transaksi, String> idDateCol = new TableColumn<>("Transaction ID/date");
+        TableColumn<Transaksi, String> idDateCol = new TableColumn<>("ID/Date");
         idDateCol.setCellValueFactory(new PropertyValueFactory<>("transaksiIdAndDate"));
-        idDateCol.setPrefWidth(150);
+        idDateCol.setPrefWidth(120);
 
-        // Description column
-        TableColumn<Transaksi, String> descriptionCol = new TableColumn<>("Description");
-        descriptionCol.setCellValueFactory(new PropertyValueFactory<>("deskripsi"));
-        descriptionCol.setPrefWidth(200);
+        TableColumn<Transaksi, String> descCol = new TableColumn<>("Description");
+        descCol.setCellValueFactory(new PropertyValueFactory<>("deskripsi"));
+        descCol.setPrefWidth(200);
 
-        // Payee/from column
         TableColumn<Transaksi, String> payeeCol = new TableColumn<>("Payee/from");
         payeeCol.setCellValueFactory(new PropertyValueFactory<>("payeeFrom"));
-        payeeCol.setPrefWidth(150);
+        payeeCol.setPrefWidth(130);
 
-        // Category column
-        TableColumn<Transaksi, String> categoryCol = new TableColumn<>("Category");
-        categoryCol.setCellValueFactory(new PropertyValueFactory<>("kategori"));
-        categoryCol.setPrefWidth(150);
+        TableColumn<Transaksi, String> catCol = new TableColumn<>("Category");
+        catCol.setCellValueFactory(new PropertyValueFactory<>("kategori"));
+        catCol.setPrefWidth(120);
 
-        // Amount column
-        TableColumn<Transaksi, Double> amountCol = new TableColumn<>("Amount");
-        amountCol.setCellValueFactory(new PropertyValueFactory<>("nominal"));
-        amountCol.setPrefWidth(100);
-        amountCol.setStyle("-fx-alignment: CENTER_RIGHT;"); // Align numbers right
+        TableColumn<Transaksi, Double> amtCol = new TableColumn<>("Amount");
+        amtCol.setCellValueFactory(new PropertyValueFactory<>("nominal"));
+        amtCol.setPrefWidth(100);
+        amtCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double val, boolean empty) {
+                super.updateItem(val, empty);
+                if (empty || val==null) {
+                    setText(null);
+                } else {
+                    Transaksi t = getTableView().getItems().get(getIndex());
+                    setText("Rp " + formatRupiah(val));
+                    setTextFill(t.getJenis().equalsIgnoreCase("Pemasukan") ? Color.GREEN : Color.RED);
+                }
+            }
+        });
 
-        table.getColumns().addAll(idDateCol, descriptionCol, payeeCol, categoryCol, amountCol);
+        // Actions column
+        TableColumn<Transaksi, Void> actionCol = new TableColumn<>("Actions");
+        actionCol.setPrefWidth(160);
+        actionCol.setCellFactory(col -> new TableCell<>() {
+            private final Button editBtn = new Button("Edit");
+            private final Button delBtn  = new Button("Delete");
+            {
+                editBtn.setOnAction(e -> {
+                    Transaksi t = getTableView().getItems().get(getIndex());
+                    // Open form in edit mode:
+                    AddTransactionForm form = new AddTransactionForm(loggedInUser, t);
+                    form.display();
+                    refreshTransactionTable();
+                    updateFinancialSummary();
+                });
+                delBtn.setOnAction(e -> {
+                    Transaksi t = getTableView().getItems().get(getIndex());
+                    transaksiDAO.deleteTransaksi(t.getTransaksiId());
+                    refreshTransactionTable();
+                    updateFinancialSummary();
+                });
+                editBtn.setStyle("-fx-background-color:#2196F3;-fx-text-fill:white;");
+                delBtn.setStyle("-fx-background-color:#F44336;-fx-text-fill:white;");
+            }
+            private final HBox pane = new HBox(5, editBtn, delBtn);
+            @Override protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : pane);
+            }
+        });
+
+        table.getColumns().addAll(idDateCol, descCol, payeeCol, catCol, amtCol, actionCol);
         return table;
+    }
+
+    private void refreshTransactionTable() {
+        if (loggedInUser!=null) {
+            List<Transaksi> lst = transaksiDAO.getAllTransactionsForUser(loggedInUser.getUserId());
+            transactionTable.setItems(FXCollections.observableArrayList(lst));
+        }
+    }
+
+    private void updateFinancialSummary() {
+        List<Transaksi> lst = transaksiDAO.getAllTransactionsForUser(loggedInUser.getUserId());
+        int total = lst.size();
+        double spend=0, earn=0;
+        LocalDate now = LocalDate.now();
+        for (Transaksi t : lst) {
+            if (t.getTanggalTransaksi().getMonth()==now.getMonth() && t.getTanggalTransaksi().getYear()==now.getYear()) {
+                if (t.getJenis().equalsIgnoreCase("Pemasukan")) earn += t.getNominal();
+                else spend += t.getNominal();
+            }
+        }
+        totalTransactionValue.setText(String.valueOf(total));
+        thisMonthSpendingValue.setText("Rp " + formatRupiah(spend));
+        thisMonthEarningValue.setText("Rp " + formatRupiah(earn));
+        double cf = earn - spend;
+        cashflowValue.setText("Rp " + formatRupiah(cf));
+        cashflowValue.setTextFill(cf>=0 ? Color.GREEN : Color.RED);
+    }
+
+    private String formatRupiah(double amt) {
+        return String.format("%,.0f", amt).replace(',','.');
     }
 }
