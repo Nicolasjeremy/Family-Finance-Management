@@ -3,6 +3,7 @@ package com.subwayit.gui;
 import com.subwayit.model.User;
 import com.subwayit.dao.TransaksiDAO;
 import com.subwayit.model.Transaksi;
+import com.subwayit.gui.DebtPage; // Add this import
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -73,7 +74,13 @@ public class DashboardPage {
             primaryStage.setScene(mp.createScene());
         });
         Button debtBtn = createNavLink("Debt");
-        // TODO: handler Debt
+        debtBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 14px;"); // Normal style
+        // --- ACTION FOR DEBT BUTTON ---
+        debtBtn.setOnAction(e -> {
+            DebtPage debtPage = new DebtPage(primaryStage, loggedInUser);
+            primaryStage.setScene(debtPage.createScene());
+            primaryStage.centerOnScreen();
+        });
 
         navBar.getChildren().addAll(logo, spacer, homeBtn, dashboardsBtn, membersBtn, debtBtn);
         return navBar;

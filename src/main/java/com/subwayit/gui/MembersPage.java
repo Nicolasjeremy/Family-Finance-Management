@@ -5,6 +5,7 @@ import com.subwayit.dao.TanggunganDAO;
 import com.subwayit.model.Penanggung;
 import com.subwayit.model.Tanggungan;
 import com.subwayit.model.User; // Important as we display both Penanggung and Tanggungan
+import com.subwayit.gui.DebtPage; // Add this import
 import java.util.List; // Add this line
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -99,7 +100,13 @@ public class MembersPage {
         // Already on members page, so no action needed, or re-render if needed
 
         Button debtBtn = createNavLink("Debt");
-        // Add action for Debt button later
+        debtBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 14px;"); // Normal style
+        // --- ACTION FOR DEBT BUTTON ---
+        debtBtn.setOnAction(e -> {
+            DebtPage debtPage = new DebtPage(primaryStage, loggedInUser);
+            primaryStage.setScene(debtPage.createScene());
+            primaryStage.centerOnScreen();
+        });
 
         navBar.getChildren().addAll(logo, spacer, homeBtn, dashboardsBtn, membersBtn, debtBtn);
         return navBar;

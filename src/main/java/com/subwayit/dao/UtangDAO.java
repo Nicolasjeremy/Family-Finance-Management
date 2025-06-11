@@ -2,75 +2,72 @@ package com.subwayit.dao;
 
 import com.subwayit.database.DatabaseManager;
 import com.subwayit.model.Utang;
+
 import java.sql.Connection;
+import java.sql.Date; // For converting LocalDate to java.sql.Date
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Date;
+import java.sql.Statement; // Ensure this is imported
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UtangDAO {
 
     /**
-     * Menyimpan data utang baru ke dalam database.
-     * @param utang Objek Utang yang akan disimpan.
+     * Inserts a new debt record into the Utang table.
+     * @param utang The Utang object to insert.
      */
     public void addUtang(Utang utang) {
-        String sql = "INSERT INTO Utang(utang_id, user_id, jumlah, bunga, tanggal_jatuh_tempo, status, creditor) VALUES(?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO Utang(utang_id, penanggung_id, jumlah, bunga, tanggal_jatuh_tempo, status, creditor) VALUES(?,?,?,?,?,?,?)";
         try (Connection conn = DatabaseManager.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
             pstmt.setString(1, utang.getUtangId());
-            pstmt.setString(2, utang.getUserId());
+            pstmt.setString(2, utang.getPenanggungId());
             pstmt.setDouble(3, utang.getJumlah());
             pstmt.setDouble(4, utang.getBunga());
-            pstmt.setDate(5, new java.sql.Date(utang.getTanggalJatuhTempo().getTime())); 
+            pstmt.setDate(5, Date.valueOf(utang.getTanggalJatuhTempo())); // Convert LocalDate to java.sql.Date
             pstmt.setString(6, utang.getStatus());
             pstmt.setString(7, utang.getCreditor());
-            
             pstmt.executeUpdate();
-            System.out.println("Utang baru berhasil ditambahkan.");
-            
+            System.out.println("Debt added successfully for creditor: " + utang.getCreditor());
         } catch (SQLException e) {
-            System.err.println("Error menambahkan utang: " + e.getMessage());
+            System.err.println("Error adding debt: " + e.getMessage());
             e.printStackTrace();
         }
     }
-    
+
     /**
-     * Mengambil semua utang dari seorang pengguna berdasarkan user ID.
-     * @param userId ID dari pengguna yang utangnya ingin dicari.
-     * @return Sebuah List dari objek Utang.
+     * Retrieves all debt records for a specific Penanggung.
+     * Only Penanggung users are responsible for debts in your schema.
+     * @param penanggungId The ID of the Penanggung whose debts to retrieve.
+     * @return A list of Utang objects.
      */
-    public List<Utang> getUtangByUserId(String userId) {
-        List<Utang> daftarUtang = new ArrayList<>();
-        String sql = "SELECT * FROM Utang WHERE user_id = ?";
-        
+    public List<Utang> getAllUtangForPenanggung(String penanggungId) {
+        String sql = "SELECT utang_id, penanggung_id, jumlah, bunga, tanggal_jatuh_tempo, status, creditor FROM Utang WHERE penanggung_id = ? ORDER BY tanggal_jatuh_tempo ASC";
+        List<Utang> utangList = new ArrayList<>();
         try (Connection conn = DatabaseManager.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setString(1, userId);
+            pstmt.setString(1, penanggungId);
             ResultSet rs = pstmt.executeQuery();
-            
             while (rs.next()) {
-                Utang utang = new Utang(
+                utangList.add(new Utang(
                     rs.getString("utang_id"),
-                    rs.getString("user_id"),
+                    rs.getString("penanggung_id"),
                     rs.getDouble("jumlah"),
                     rs.getDouble("bunga"),
-                    rs.getDate("tanggal_jatuh_tempo"),
+                    rs.getDate("tanggal_jatuh_tempo").toLocalDate(), // Convert java.sql.Date to LocalDate
                     rs.getString("status"),
                     rs.getString("creditor")
-                );
-                daftarUtang.add(utang);
+                ));
             }
-            
         } catch (SQLException e) {
-            System.err.println("Error mengambil data utang: " + e.getMessage());
+            System.err.println("Error getting Utang for Penanggung: " + e.getMessage());
             e.printStackTrace();
         }
-        
-        return daftarUtang;
+        return utangList;
     }
+
+    // You can add update, delete, and getById methods for Utang later if needed.
 }
