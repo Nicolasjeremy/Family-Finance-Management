@@ -4,9 +4,8 @@ import com.subwayit.dao.PenanggungDAO;
 import com.subwayit.dao.TanggunganDAO;
 import com.subwayit.model.Penanggung;
 import com.subwayit.model.Tanggungan;
-import com.subwayit.model.User; // Important as we display both Penanggung and Tanggungan
-import com.subwayit.gui.DebtPage; // Add this import
-import java.util.List; // Add this line
+import com.subwayit.model.User;
+import java.util.List;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -15,28 +14,38 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.image.Image; // For member pictures
-import javafx.scene.image.ImageView; // For member pictures
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
 public class MembersPage {
 
-    private Stage primaryStage; // Reference to the main stage
-    private User loggedInUser; // To hold the user who logged in
+    private Stage primaryStage;
+    private User loggedInUser;
     private PenanggungDAO penanggungDAO;
     private TanggunganDAO tanggunganDAO;
 
-    // ObservableList to hold members for display (will be populated from DB)
     private ObservableList<User> familyMembers;
-    private GridPane memberCardsGrid; // Reference to the grid to update members
+    private GridPane memberCardsGrid;
+
+    // Theme colors
+    private static final String PRIMARY_GREEN = "#86DA71";
+    private static final String DARK_GREEN = "#6BB85A";
+    private static final String LIGHT_GREEN = "#F0F9ED";
+    private static final String TEXT_DARK = "#2D3748";
+    private static final String TEXT_GRAY = "#64748B";
 
     public MembersPage(Stage primaryStage, User user) {
         this.primaryStage = primaryStage;
@@ -47,238 +56,475 @@ public class MembersPage {
     }
 
     public Scene createScene() {
-        // --- Top Navigation Bar (reused/consistent with Dashboard) ---
-        HBox topNav = createTopNavigationBar();
+        // Modern top navigation bar
+        HBox topNav = createModernNavigationBar();
 
-        // --- Main Content Area ---
-        VBox mainContent = createMainContentArea();
-        ScrollPane scrollPane = new ScrollPane(mainContent); // Make content scrollable
-        scrollPane.setFitToWidth(true); // Ensure it takes full width
-        scrollPane.setStyle("-fx-background-color: #F0F0F0;"); // Match main content background
+        // Main content area with modern styling
+        VBox mainContent = createModernContentArea();
+        ScrollPane scrollPane = new ScrollPane(mainContent);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background-color: white; -fx-background: white;");
 
-        // --- Root Layout ---
+        // Root layout with modern background
         BorderPane root = new BorderPane();
         root.setTop(topNav);
         root.setCenter(scrollPane);
-        root.setStyle("-fx-background-color: #F0F0F0;");
+        root.setStyle("-fx-background-color: linear-gradient(135deg, " + LIGHT_GREEN + " 0%, #ffffff 50%, " + LIGHT_GREEN + " 100%);");
 
-        Scene scene = new Scene(root, 1000, 700); // Adjust size as needed
-        return scene;
+        return new Scene(root, 1200, 800);
     }
 
-    private HBox createTopNavigationBar() {
-        HBox navBar = new HBox(15);
-        navBar.setPadding(new Insets(10, 20, 10, 20));
+    private HBox createModernNavigationBar() {
+        HBox navBar = new HBox(20);
+        navBar.setPadding(new Insets(15, 30, 15, 30));
         navBar.setAlignment(Pos.CENTER_LEFT);
-        navBar.setStyle("-fx-background-color: #333333;");
+        
+        // Green navigation bar
+        navBar.setStyle("-fx-background-color: " + PRIMARY_GREEN + "; " +
+                       "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8, 0, 0, 2);");
 
+        // Logo with modern styling
         Label logo = new Label("SUBWAYIT");
-        logo.setFont(Font.font("Arial", 24));
+        logo.setFont(Font.font("Segoe UI", FontWeight.BOLD, 26));
         logo.setTextFill(Color.WHITE);
+        logo.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 1, 0, 0, 1);");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button homeBtn = createNavLink("Home");
-        // Set action for Home button to go back to DashboardPage
+        // Modern navigation buttons
+        Button homeBtn = createModernNavLink("Home", "🏠");
         homeBtn.setOnAction(e -> {
             DashboardPage dashboardPage = new DashboardPage(primaryStage, loggedInUser);
             primaryStage.setScene(dashboardPage.createScene());
             primaryStage.centerOnScreen();
         });
 
-        Button dashboardsBtn = createNavLink("Dashboards");
-        // Set action for Dashboards button (same as Home for now, or specific dashboard)
+        Button dashboardsBtn = createModernNavLink("Dashboard", "📊");
         dashboardsBtn.setOnAction(e -> {
             DashboardPage dashboardPage = new DashboardPage(primaryStage, loggedInUser);
             primaryStage.setScene(dashboardPage.createScene());
             primaryStage.centerOnScreen();
         });
 
-        Button membersBtn = createNavLink("Members");
-        membersBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;"); // Highlight current page
-        // Already on members page, so no action needed, or re-render if needed
+        Button membersBtn = createModernNavLink("Members", "👥");
+        // Highlight current page
+        membersBtn.setStyle(membersBtn.getStyle() + 
+            "-fx-background-color: rgba(255, 255, 255, 0.2); " +
+            "-fx-border-color: rgba(255, 255, 255, 0.4); " +
+            "-fx-border-width: 1px;");
 
-        Button debtBtn = createNavLink("Debt");
-        debtBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 14px;"); // Normal style
-        // --- ACTION FOR DEBT BUTTON ---
-        debtBtn.setOnAction(e -> {
-            DebtPage debtPage = new DebtPage(primaryStage, loggedInUser);
-            primaryStage.setScene(debtPage.createScene());
-            primaryStage.centerOnScreen();
-        });
+        Button debtBtn = createModernNavLink("Debt", "💳");
 
         navBar.getChildren().addAll(logo, spacer, homeBtn, dashboardsBtn, membersBtn, debtBtn);
         return navBar;
     }
 
-    private Button createNavLink(String text) {
-        Button btn = new Button(text);
-        btn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 14px;");
+    private Button createModernNavLink(String text, String icon) {
+        Button btn = new Button(icon + " " + text);
+        btn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
+        btn.setPadding(new Insets(10, 16, 10, 16));
+        btn.setStyle("-fx-background-color: transparent; " +
+                    "-fx-text-fill: white; " +
+                    "-fx-background-radius: 8; " +
+                    "-fx-border-radius: 8; " +
+                    "-fx-cursor: hand;");
+        
+        // Hover effects
+        btn.setOnMouseEntered(e -> btn.setStyle(btn.getStyle() + 
+            "-fx-background-color: rgba(255,255,255,0.15);"));
+        btn.setOnMouseExited(e -> btn.setStyle(btn.getStyle()
+            .replace("-fx-background-color: rgba(255,255,255,0.15);", "")));
+        
         return btn;
     }
 
-    private VBox createMainContentArea() {
-        VBox content = new VBox(20); // Spacing between sections
-        content.setPadding(new Insets(20));
-        content.setAlignment(Pos.TOP_CENTER); // Align content to top center
+    private VBox createModernContentArea() {
+        VBox content = new VBox(30);
+        content.setPadding(new Insets(30, 40, 30, 40));
+        content.setAlignment(Pos.TOP_CENTER);
 
-        // --- Title and Summary ---
-        HBox titleSummary = new HBox(50); // Spacing between title and summary
-        titleSummary.setAlignment(Pos.CENTER_LEFT); // Align to left
-        titleSummary.setPadding(new Insets(0, 0, 20, 0)); // Padding below this section
+        // Modern header section
+        VBox headerSection = createModernHeaderSection();
+        
+        // Modern statistics cards
+        HBox statsSection = createModernStatsSection();
 
-        Label membersTitle = new Label("Agus financial members");
-        membersTitle.setFont(Font.font("Arial", 24));
-        membersTitle.setTextFill(Color.web("#333333"));
+        // Modern member cards grid
+        VBox membersSection = createModernMembersSection();
 
-        VBox avgStats = new VBox(5);
-        avgStats.getChildren().addAll(
-                new Label("Average monthly earns"),
-                new Label("$25.020,07") // Placeholder
+        content.getChildren().addAll(headerSection, statsSection, membersSection);
+        return content;
+    }
+
+    private VBox createModernHeaderSection() {
+        VBox headerSection = new VBox(15);
+        headerSection.setAlignment(Pos.CENTER_LEFT);
+
+        // Title with green accent
+        HBox titleRow = new HBox(15);
+        titleRow.setAlignment(Pos.CENTER_LEFT);
+        
+        // Decorative green circle
+        Circle titleIcon = new Circle(25);
+        titleIcon.setFill(Color.web(PRIMARY_GREEN, 0.2));
+        titleIcon.setStroke(Color.web(PRIMARY_GREEN));
+        titleIcon.setStrokeWidth(2);
+        
+        VBox titleContainer = new VBox(5);
+        Label membersTitle = new Label("Family Financial Members 👨‍👩‍👧‍👦");
+        membersTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
+        membersTitle.setTextFill(Color.web(TEXT_DARK));
+        
+        Label subtitle = new Label("Manage your family's financial overview and member details");
+        subtitle.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 16));
+        subtitle.setTextFill(Color.web(TEXT_GRAY));
+        
+        titleContainer.getChildren().addAll(membersTitle, subtitle);
+        titleRow.getChildren().addAll(titleIcon, titleContainer);
+
+        // Decorative line
+        Rectangle decorativeLine = new Rectangle(80, 3);
+        decorativeLine.setFill(Color.web(PRIMARY_GREEN));
+        decorativeLine.setArcWidth(3);
+        decorativeLine.setArcHeight(3);
+
+        headerSection.getChildren().addAll(titleRow, decorativeLine);
+        return headerSection;
+    }
+
+    private HBox createModernStatsSection() {
+        HBox statsSection = new HBox(25);
+        statsSection.setAlignment(Pos.CENTER);
+
+        // Average earnings card
+        VBox earningsCard = createModernStatsCard(
+            "💰 Average Monthly Earnings", 
+            "$25,020.07", 
+            "+12.5% from last month",
+            PRIMARY_GREEN
         );
-        VBox avgSpending = new VBox(5);
-        avgSpending.getChildren().addAll(
-                new Label("Average monthly spending"),
-                new Label("$22.140,07") // Placeholder
+
+        // Average spending card
+        VBox spendingCard = createModernStatsCard(
+            "💸 Average Monthly Spending", 
+            "$22,140.07", 
+            "+8.3% from last month",
+            "#ff6b6b"
         );
 
-        titleSummary.getChildren().addAll(membersTitle, new Region() {{ HBox.setHgrow(this, Priority.ALWAYS); }}, avgStats, avgSpending); // Spacer to push stats right
+        // Net savings card
+        VBox savingsCard = createModernStatsCard(
+            "📈 Net Monthly Savings", 
+            "$2,880.00", 
+            "+45.2% from last month",
+            DARK_GREEN
+        );
 
-        // --- Member Cards Grid ---
+        statsSection.getChildren().addAll(earningsCard, spendingCard, savingsCard);
+        return statsSection;
+    }
+
+    private VBox createModernStatsCard(String title, String value, String change, String accentColor) {
+        VBox card = new VBox(12);
+        card.setAlignment(Pos.TOP_LEFT);
+        card.setPadding(new Insets(20, 20, 20, 20));
+        card.setPrefWidth(280);
+        
+        // Modern card styling
+        card.setStyle("-fx-background-color: white; " +
+                     "-fx-background-radius: 12; " +
+                     "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2); " +
+                     "-fx-border-color: #E2E8F0; " +
+                     "-fx-border-width: 1; " +
+                     "-fx-border-radius: 12;");
+
+        // Title
+        Label titleLabel = new Label(title);
+        titleLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
+        titleLabel.setTextFill(Color.web(TEXT_GRAY));
+
+        // Value
+        Label valueLabel = new Label(value);
+        valueLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
+        valueLabel.setTextFill(Color.web(TEXT_DARK));
+
+        // Change indicator
+        Label changeLabel = new Label(change);
+        changeLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 12));
+        changeLabel.setTextFill(Color.web(accentColor));
+
+        // Accent line
+        Rectangle accentLine = new Rectangle(40, 3);
+        accentLine.setFill(Color.web(accentColor));
+        accentLine.setArcWidth(3);
+        accentLine.setArcHeight(3);
+
+        card.getChildren().addAll(titleLabel, valueLabel, changeLabel, accentLine);
+
+        // Hover effect
+        card.setOnMouseEntered(e -> card.setStyle(card.getStyle() + 
+            "-fx-border-color: " + accentColor + ";"));
+        card.setOnMouseExited(e -> card.setStyle(card.getStyle()
+            .replace("-fx-border-color: " + accentColor + ";", "-fx-border-color: #E2E8F0;")));
+
+        return card;
+    }
+
+    private VBox createModernMembersSection() {
+        VBox membersSection = new VBox(20);
+
+        // Section header
+        HBox sectionHeader = new HBox(15);
+        sectionHeader.setAlignment(Pos.CENTER_LEFT);
+        
+        Rectangle accentBar = new Rectangle(4, 30);
+        accentBar.setFill(Color.web(PRIMARY_GREEN));
+        accentBar.setArcWidth(4);
+        accentBar.setArcHeight(4);
+        
+        Label sectionTitle = new Label("Family Members");
+        sectionTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
+        sectionTitle.setTextFill(Color.web(TEXT_DARK));
+        
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        
+        Button addMemberBtn = new Button("➕ Add Member");
+        addMemberBtn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
+        addMemberBtn.setPadding(new Insets(10, 20, 10, 20));
+        addMemberBtn.setTextFill(Color.WHITE);
+        addMemberBtn.setStyle("-fx-background-color: " + PRIMARY_GREEN + "; " +
+                             "-fx-background-radius: 8; " +
+                             "-fx-cursor: hand; " +
+                             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 2);");
+        
+        addMemberBtn.setOnMouseEntered(e -> addMemberBtn.setStyle(addMemberBtn.getStyle().replace(PRIMARY_GREEN, DARK_GREEN)));
+        addMemberBtn.setOnMouseExited(e -> addMemberBtn.setStyle(addMemberBtn.getStyle().replace(DARK_GREEN, PRIMARY_GREEN)));
+        
+        addMemberBtn.setOnAction(e -> {
+            AddMemberForm addMemberForm = new AddMemberForm();
+            addMemberForm.display();
+            loadAndDisplayMembers();
+        });
+        
+        sectionHeader.getChildren().addAll(accentBar, sectionTitle, spacer, addMemberBtn);
+
+        // Member cards grid
         memberCardsGrid = new GridPane();
-        memberCardsGrid.setHgap(20); // Horizontal gap between cards
-        memberCardsGrid.setVgap(20); // Vertical gap between rows
+        memberCardsGrid.setHgap(25);
+        memberCardsGrid.setVgap(25);
+        memberCardsGrid.setAlignment(Pos.CENTER);
 
         // Load and display members
         loadAndDisplayMembers();
 
-        content.getChildren().addAll(titleSummary, memberCardsGrid);
-
-        return content;
+        membersSection.getChildren().addAll(sectionHeader, memberCardsGrid);
+        return membersSection;
     }
 
-    /**
-     * Loads members from the database and updates the Grid Pane.
-     */
     private void loadAndDisplayMembers() {
-        memberCardsGrid.getChildren().clear(); // Clear existing cards
-        familyMembers.clear(); // Clear observable list
+        memberCardsGrid.getChildren().clear();
+        familyMembers.clear();
 
-        // --- Load Penanggung (if logged-in user is Penanggung) ---
+        // Load members based on logged-in user
         if (loggedInUser instanceof Penanggung) {
             Penanggung penanggung = penanggungDAO.getPenanggungById(loggedInUser.getUserId());
             if (penanggung != null) {
                 familyMembers.add(penanggung);
             }
-        } else { // If a Tanggungan is logged in, only show themselves for now
+        } else {
             Tanggungan tanggungan = tanggunganDAO.getTanggunganById(loggedInUser.getUserId());
             if (tanggungan != null) {
                 familyMembers.add(tanggungan);
             }
         }
-        // TODO: In a real app, you'd fetch all members of the *logged-in Penanggung's* family
-        // This would involve looking up Keluarga by Penanggung ID, then Anggota_Keluarga.
-        // For now, this just adds the loggedInUser.
 
-        // To populate with sample dependents regardless of loggedInUser for display purposes:
-        // For a real app, ensure these are actual Tanggungan objects from the DB linked to the current Penanggung's family
-        List<Tanggungan> allDependents = tanggunganDAO.getAllTanggunan(); // Fetch all dependents (simplify for now)
+        // Add all dependents
+        List<Tanggungan> allDependents = tanggunganDAO.getAllTanggunan();
         for(Tanggungan t : allDependents) {
-            if (!t.getUserId().equals(loggedInUser.getUserId())) { // Don't add loggedInUser again if they are Tanggungan
+            if (!t.getUserId().equals(loggedInUser.getUserId())) {
                 familyMembers.add(t);
             }
         }
 
-
-        // --- Populate Grid with Member Cards ---
+        // Populate grid with member cards
         int col = 0;
         int row = 0;
         for (User member : familyMembers) {
-            VBox memberCard = createMemberCard(member);
+            VBox memberCard = createModernMemberCard(member);
             memberCardsGrid.add(memberCard, col, row);
             col++;
-            if (col == 4) { // 4 cards per row as per design
+            if (col == 4) {
                 col = 0;
                 row++;
             }
         }
 
-        // --- Add Member Card (the '+' button) ---
-        VBox addMemberCard = createAddMemberCard();
+        // Add the "Add Member" card
+        VBox addMemberCard = createModernAddMemberCard();
         memberCardsGrid.add(addMemberCard, col, row);
     }
 
-    /**
-     * Creates a visual card for a family member.
-     * @param member The User (Penanggung or Tanggungan) object to display.
-     * @return A VBox representing the member's card.
-     */
-    private VBox createMemberCard(User member) {
-        VBox card = new VBox(5);
-        card.setAlignment(Pos.TOP_LEFT);
-        card.setPadding(new Insets(15));
-        card.setPrefSize(180, 180); // Fixed size for consistent cards
-        card.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 0);");
+    private VBox createModernMemberCard(User member) {
+        VBox card = new VBox(15);
+        card.setAlignment(Pos.TOP_CENTER);
+        card.setPadding(new Insets(20, 15, 20, 15));
+        card.setPrefSize(220, 280);
+        
+        // Modern card styling
+        card.setStyle("-fx-background-color: white; " +
+                     "-fx-background-radius: 16; " +
+                     "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0, 0, 4); " +
+                     "-fx-border-color: #E2E8F0; " +
+                     "-fx-border-width: 1; " +
+                     "-fx-border-radius: 16;");
 
-        // Optional: Member Picture (Placeholder for now)
-        ImageView profilePic = new ImageView();
-        // You can load a default image or user-specific image here if available
-        // Example: profilePic.setImage(new Image("file:path/to/default_profile.png"));
-        // For now, a blank square or specific icon
-        profilePic.setFitWidth(60);
-        profilePic.setFitHeight(60);
-        profilePic.setStyle("-fx-background-color: #E0E0E0; -fx-background-radius: 30;"); // Grey circle placeholder
+        // Profile picture container
+        StackPane profileContainer = new StackPane();
+        profileContainer.setPrefSize(80, 80);
+        profileContainer.setStyle("-fx-background-color: " + PRIMARY_GREEN + "30; " +
+                                 "-fx-background-radius: 40; " +
+                                 "-fx-border-color: " + PRIMARY_GREEN + "; " +
+                                 "-fx-border-width: 2; " +
+                                 "-fx-border-radius: 40;");
+        
+        // Profile icon/initial
+        Label profileIcon = new Label(member.getNama().substring(0, 1).toUpperCase());
+        profileIcon.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
+        profileIcon.setTextFill(Color.web(PRIMARY_GREEN));
+        
+        profileContainer.getChildren().add(profileIcon);
 
-        // Name and Age (e.g., "Agus, 20" or "Dumbo, 12")
-        Label nameAgeLabel = new Label(member.getNama() + ", " + member.getUmur());
-        nameAgeLabel.setFont(Font.font("Arial", 16));
-        nameAgeLabel.setTextFill(Color.web("#333333"));
+        // Member info
+        VBox infoContainer = new VBox(8);
+        infoContainer.setAlignment(Pos.CENTER);
+        
+        // Name and age
+        Label nameLabel = new Label(member.getNama());
+        nameLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
+        nameLabel.setTextFill(Color.web(TEXT_DARK));
+        nameLabel.setWrapText(true);
+        
+        Label ageLabel = new Label(member.getUmur() + " years old");
+        ageLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
+        ageLabel.setTextFill(Color.web(TEXT_GRAY));
 
-        // Financial Figure (Placeholder for now, e.g., "$20.000,42")
-        Label financialLabel = new Label("$XX,XXX.XX"); // Placeholder
-        financialLabel.setFont(Font.font("Arial", 14));
-        financialLabel.setTextFill(Color.web("#4CAF50")); // Green color
+        // Financial info (placeholder)
+        Label financialLabel = new Label("$XX,XXX.XX");
+        financialLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
+        financialLabel.setTextFill(Color.web(DARK_GREEN));
 
-        // Role and Occupation/Education
-        Label roleOccupationLabel = new Label(member.getRole() + "\n" +
-                (member instanceof Penanggung ? ((Penanggung) member).getNama() + " Direktur pertamina" : // Placeholder for actual occupation
-                 member instanceof Tanggungan ? ((Tanggungan) member).getPendidikan() : "N/A")); // Use education for Tanggungan for now
-        roleOccupationLabel.setFont(Font.font("Arial", 12));
-        roleOccupationLabel.setTextFill(Color.GRAY);
-        roleOccupationLabel.setWrapText(true); // Allow text wrapping
+        // Role badge
+        HBox roleBadge = new HBox();
+        roleBadge.setAlignment(Pos.CENTER);
+        roleBadge.setPadding(new Insets(6, 12, 6, 12));
+        roleBadge.setStyle("-fx-background-color: " + LIGHT_GREEN + "; " +
+                          "-fx-background-radius: 12; " +
+                          "-fx-border-color: " + PRIMARY_GREEN + "40; " +
+                          "-fx-border-width: 1; " +
+                          "-fx-border-radius: 12;");
+        
+        String roleText = member.getRole();
+        if (member instanceof Penanggung) {
+            roleText = "👨‍💼 " + roleText;
+        } else if (member instanceof Tanggungan) {
+            roleText = "👨‍🎓 " + roleText;
+        }
+        
+        Label roleLabel = new Label(roleText);
+        roleLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 12));
+        roleLabel.setTextFill(Color.web(DARK_GREEN));
+        
+        roleBadge.getChildren().add(roleLabel);
 
-        // Ensure profilePic is centered horizontally relative to other labels
-        HBox picContainer = new HBox(profilePic);
-        picContainer.setAlignment(Pos.CENTER);
-        picContainer.setPadding(new Insets(0,0,10,0)); // Padding below picture
+        // Additional info
+        String additionalInfo = "";
+        if (member instanceof Penanggung) {
+            additionalInfo = "Financial Guardian";
+        } else if (member instanceof Tanggungan) {
+            additionalInfo = ((Tanggungan) member).getPendidikan();
+        }
+        
+        Label additionalLabel = new Label(additionalInfo);
+        additionalLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 12));
+        additionalLabel.setTextFill(Color.web(TEXT_GRAY));
+        additionalLabel.setWrapText(true);
+        additionalLabel.setAlignment(Pos.CENTER);
 
-        card.getChildren().addAll(picContainer, nameAgeLabel, financialLabel, roleOccupationLabel);
+        infoContainer.getChildren().addAll(nameLabel, ageLabel, financialLabel, roleBadge, additionalLabel);
+        card.getChildren().addAll(profileContainer, infoContainer);
+
+        // Hover effect
+        card.setOnMouseEntered(e -> card.setStyle(card.getStyle() + 
+            "-fx-border-color: " + PRIMARY_GREEN + "; -fx-scale-x: 1.02; -fx-scale-y: 1.02;"));
+        card.setOnMouseExited(e -> card.setStyle(card.getStyle()
+            .replace("-fx-border-color: " + PRIMARY_GREEN + ";", "-fx-border-color: #E2E8F0;")
+            .replace("-fx-scale-x: 1.02; -fx-scale-y: 1.02;", "")));
+
         return card;
     }
 
-    /**
-     * Creates the special card with a "+" button to add new members.
-     * @return A VBox representing the "Add Member" card.
-     */
-    private VBox createAddMemberCard() {
-        VBox card = new VBox(5);
+    private VBox createModernAddMemberCard() {
+        VBox card = new VBox(15);
         card.setAlignment(Pos.CENTER);
-        card.setPadding(new Insets(15));
-        card.setPrefSize(180, 180);
-        card.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 0); -fx-border-color: #BBBBBB; -fx-border-style: dashed; -fx-border-width: 2;");
+        card.setPadding(new Insets(20, 15, 20, 15));
+        card.setPrefSize(220, 280);
+        
+        // Modern add card styling
+        card.setStyle("-fx-background-color: white; " +
+                     "-fx-background-radius: 16; " +
+                     "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2); " +
+                     "-fx-border-color: " + PRIMARY_GREEN + "60; " +
+                     "-fx-border-width: 2; " +
+                     "-fx-border-radius: 16; " +
+                     "-fx-border-style: dashed; " +
+                     "-fx-cursor: hand;");
 
-        Label plusIcon = new Label("+");
-        plusIcon.setFont(Font.font("Arial", 60));
-        plusIcon.setTextFill(Color.web("#BBBBBB"));
+        // Plus icon container
+        StackPane iconContainer = new StackPane();
+        iconContainer.setPrefSize(80, 80);
+        iconContainer.setStyle("-fx-background-color: " + LIGHT_GREEN + "; " +
+                              "-fx-background-radius: 40; " +
+                              "-fx-border-color: " + PRIMARY_GREEN + "40; " +
+                              "-fx-border-width: 2; " +
+                              "-fx-border-radius: 40;");
+        
+        Label plusIcon = new Label("➕");
+        plusIcon.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
+        plusIcon.setTextFill(Color.web(PRIMARY_GREEN));
+        
+        iconContainer.getChildren().add(plusIcon);
 
-        card.getChildren().add(plusIcon);
+        // Add member text
+        VBox textContainer = new VBox(8);
+        textContainer.setAlignment(Pos.CENTER);
+        
+        Label addLabel = new Label("Add New Member");
+        addLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
+        addLabel.setTextFill(Color.web(TEXT_DARK));
+        
+        Label descLabel = new Label("Click to add a new family member to your financial group");
+        descLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 12));
+        descLabel.setTextFill(Color.web(TEXT_GRAY));
+        descLabel.setWrapText(true);
+        descLabel.setAlignment(Pos.CENTER);
+        
+        textContainer.getChildren().addAll(addLabel, descLabel);
+        card.getChildren().addAll(iconContainer, textContainer);
+
+        // Hover effect
+        card.setOnMouseEntered(e -> card.setStyle(card.getStyle() + 
+            "-fx-background-color: " + LIGHT_GREEN + "; -fx-scale-x: 1.02; -fx-scale-y: 1.02;"));
+        card.setOnMouseExited(e -> card.setStyle(card.getStyle()
+            .replace("-fx-background-color: " + LIGHT_GREEN + ";", "-fx-background-color: white;")
+            .replace("-fx-scale-x: 1.02; -fx-scale-y: 1.02;", "")));
 
         // Action to open AddMemberForm
         card.setOnMouseClicked(e -> {
             AddMemberForm addMemberForm = new AddMemberForm();
             addMemberForm.display();
-            loadAndDisplayMembers(); // Refresh members after adding
+            loadAndDisplayMembers();
         });
 
         return card;
