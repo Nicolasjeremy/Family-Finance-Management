@@ -5,6 +5,14 @@ import com.subwayit.database.DatabaseManager;
 import com.subwayit.model.User;
 import com.subwayit.gui.DashboardPage;
 
+// Import model dan DAO yang diperlukan
+import com.subwayit.model.Penanggung;
+import com.subwayit.dao.PenanggungDAO;
+import com.subwayit.model.Tanggungan;
+import com.subwayit.dao.TanggunganDAO;
+import com.subwayit.model.Admin;
+import com.subwayit.dao.AdminDAO;
+
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -64,7 +72,8 @@ public class App extends Application {
     private Scene createLoginScene() {
         // Main container with modern styling
         StackPane root = new StackPane();
-        root.setStyle("-fx-background-color: linear-gradient(135deg, " + LIGHT_GREEN + " 0%, #ffffff 50%, " + LIGHT_GREEN + " 100%);");
+        root.setStyle("-fx-background-color: linear-gradient(135deg, " + LIGHT_GREEN + " 0%, #ffffff 50%, "
+                + LIGHT_GREEN + " 100%);");
 
         // Login card container
         VBox loginCard = new VBox(25);
@@ -72,18 +81,18 @@ public class App extends Application {
         loginCard.setPadding(new Insets(40, 50, 40, 50));
         loginCard.setMaxWidth(450);
         loginCard.setStyle("-fx-background-color: white; " +
-                          "-fx-background-radius: 16; " +
-                          "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 20, 0, 0, 8); " +
-                          "-fx-border-color: #E2E8F0; " +
-                          "-fx-border-width: 1; " +
-                          "-fx-border-radius: 16;");
+                "-fx-background-radius: 16; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 20, 0, 0, 8); " +
+                "-fx-border-color: #E2E8F0; " +
+                "-fx-border-width: 1; " +
+                "-fx-border-radius: 16;");
 
         // App title with modern styling
         VBox titleSection = createTitleSection();
-        
+
         // Login form
         VBox loginForm = createLoginForm();
-        
+
         // Register section
         VBox registerSection = createRegisterSection();
 
@@ -146,11 +155,11 @@ public class App extends Application {
         usernameField.setPrefHeight(45);
         usernameField.setFont(Font.font("Segoe UI", 14));
         usernameField.setStyle("-fx-background-color: white; " +
-                              "-fx-border-color: #E2E8F0; " +
-                              "-fx-border-width: 2; " +
-                              "-fx-border-radius: 8; " +
-                              "-fx-background-radius: 8; " +
-                              "-fx-padding: 12;");
+                "-fx-border-color: #E2E8F0; " +
+                "-fx-border-width: 2; " +
+                "-fx-border-radius: 8; " +
+                "-fx-background-radius: 8; " +
+                "-fx-padding: 12;");
 
         // Focus styling
         usernameField.focusedProperty().addListener((obs, oldVal, newVal) -> {
@@ -175,11 +184,11 @@ public class App extends Application {
         passwordField.setPrefHeight(45);
         passwordField.setFont(Font.font("Segoe UI", 14));
         passwordField.setStyle("-fx-background-color: white; " +
-                              "-fx-border-color: #E2E8F0; " +
-                              "-fx-border-width: 2; " +
-                              "-fx-border-radius: 8; " +
-                              "-fx-background-radius: 8; " +
-                              "-fx-padding: 12;");
+                "-fx-border-color: #E2E8F0; " +
+                "-fx-border-width: 2; " +
+                "-fx-border-radius: 8; " +
+                "-fx-background-radius: 8; " +
+                "-fx-padding: 12;");
 
         // Focus styling
         passwordField.focusedProperty().addListener((obs, oldVal, newVal) -> {
@@ -199,13 +208,15 @@ public class App extends Application {
         loginButton.setPrefHeight(50);
         loginButton.setTextFill(Color.WHITE);
         loginButton.setStyle("-fx-background-color: " + PRIMARY_GREEN + "; " +
-                            "-fx-background-radius: 10; " +
-                            "-fx-cursor: hand; " +
-                            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0, 0, 3);");
+                "-fx-background-radius: 10; " +
+                "-fx-cursor: hand; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0, 0, 3);");
 
         // Hover effects
-        loginButton.setOnMouseEntered(e -> loginButton.setStyle(loginButton.getStyle().replace(PRIMARY_GREEN, DARK_GREEN)));
-        loginButton.setOnMouseExited(e -> loginButton.setStyle(loginButton.getStyle().replace(DARK_GREEN, PRIMARY_GREEN)));
+        loginButton.setOnMouseEntered(
+                e -> loginButton.setStyle(loginButton.getStyle().replace(PRIMARY_GREEN, DARK_GREEN)));
+        loginButton
+                .setOnMouseExited(e -> loginButton.setStyle(loginButton.getStyle().replace(DARK_GREEN, PRIMARY_GREEN)));
         loginButton.setOnAction(e -> handleLogin());
 
         loginForm.getChildren().addAll(welcomeSection, usernameSection, passwordSection, loginButton);
@@ -219,17 +230,17 @@ public class App extends Application {
         // Separator
         HBox separator = new HBox(10);
         separator.setAlignment(Pos.CENTER);
-        
+
         Rectangle leftLine = new Rectangle(100, 1);
         leftLine.setFill(Color.web("#E2E8F0"));
-        
+
         Label orLabel = new Label("OR");
         orLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 12));
         orLabel.setTextFill(Color.web(TEXT_GRAY));
-        
+
         Rectangle rightLine = new Rectangle(100, 1);
         rightLine.setFill(Color.web("#E2E8F0"));
-        
+
         separator.getChildren().addAll(leftLine, orLabel, rightLine);
 
         // Register button
@@ -239,17 +250,17 @@ public class App extends Application {
         registerButton.setPrefHeight(45);
         registerButton.setTextFill(Color.web(TEXT_DARK));
         registerButton.setStyle("-fx-background-color: white; " +
-                               "-fx-border-color: " + PRIMARY_GREEN + "; " +
-                               "-fx-border-width: 2; " +
-                               "-fx-border-radius: 8; " +
-                               "-fx-background-radius: 8; " +
-                               "-fx-cursor: hand;");
+                "-fx-border-color: " + PRIMARY_GREEN + "; " +
+                "-fx-border-width: 2; " +
+                "-fx-border-radius: 8; " +
+                "-fx-background-radius: 8; " +
+                "-fx-cursor: hand;");
 
         // Hover effects
-        registerButton.setOnMouseEntered(e -> registerButton.setStyle(registerButton.getStyle() + 
-            "-fx-background-color: " + LIGHT_GREEN + ";"));
+        registerButton.setOnMouseEntered(e -> registerButton.setStyle(registerButton.getStyle() +
+                "-fx-background-color: " + LIGHT_GREEN + ";"));
         registerButton.setOnMouseExited(e -> registerButton.setStyle(registerButton.getStyle()
-            .replace("-fx-background-color: " + LIGHT_GREEN + ";", "")));
+                .replace("-fx-background-color: " + LIGHT_GREEN + ";", "")));
         registerButton.setOnAction(e -> handleRegister());
 
         registerSection.getChildren().addAll(separator, registerButton);
@@ -268,7 +279,8 @@ public class App extends Application {
         User user = userDAO.getUserByUserId(username);
 
         if (user != null && user.getPassword().equals(password)) {
-            showModernAlert(Alert.AlertType.INFORMATION, "Login Successful", "Welcome back, " + user.getNama() + "! 🎉");
+            showModernAlert(Alert.AlertType.INFORMATION, "Login Successful",
+                    "Welcome back, " + user.getNama() + "! 🎉");
             openDashboard(user);
         } else {
             showModernAlert(Alert.AlertType.ERROR, "Login Failed", "Invalid username or password. Please try again.");
@@ -281,7 +293,8 @@ public class App extends Application {
 
         // Main container
         StackPane root = new StackPane();
-        root.setStyle("-fx-background-color: linear-gradient(135deg, " + LIGHT_GREEN + " 0%, #ffffff 50%, " + LIGHT_GREEN + " 100%);");
+        root.setStyle("-fx-background-color: linear-gradient(135deg, " + LIGHT_GREEN + " 0%, #ffffff 50%, "
+                + LIGHT_GREEN + " 100%);");
 
         // Registration card
         VBox registerCard = new VBox(20);
@@ -289,24 +302,24 @@ public class App extends Application {
         registerCard.setPadding(new Insets(30, 40, 30, 40));
         registerCard.setMaxWidth(400);
         registerCard.setStyle("-fx-background-color: white; " +
-                             "-fx-background-radius: 16; " +
-                             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5); " +
-                             "-fx-border-color: #E2E8F0; " +
-                             "-fx-border-width: 1; " +
-                             "-fx-border-radius: 16;");
+                "-fx-background-radius: 16; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5); " +
+                "-fx-border-color: #E2E8F0; " +
+                "-fx-border-width: 1; " +
+                "-fx-border-radius: 16;");
 
         // Title section
         VBox titleSection = new VBox(10);
         titleSection.setAlignment(Pos.CENTER);
-        
+
         Label registerTitle = new Label("Create Account ✨");
         registerTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
         registerTitle.setTextFill(Color.web(TEXT_DARK));
-        
+
         Label registerDesc = new Label("Join SubwayIT financial management");
         registerDesc.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 14));
         registerDesc.setTextFill(Color.web(TEXT_GRAY));
-        
+
         titleSection.getChildren().addAll(registerTitle, registerDesc);
 
         // Form fields
@@ -328,10 +341,10 @@ public class App extends Application {
         regRoleComboBox.setPrefWidth(320);
         regRoleComboBox.setPrefHeight(45);
         regRoleComboBox.setStyle("-fx-background-color: white; " +
-                                "-fx-border-color: #E2E8F0; " +
-                                "-fx-border-width: 2; " +
-                                "-fx-border-radius: 8; " +
-                                "-fx-background-radius: 8;");
+                "-fx-border-color: #E2E8F0; " +
+                "-fx-border-width: 2; " +
+                "-fx-border-radius: 8; " +
+                "-fx-background-radius: 8;");
         regRoleComboBox.getSelectionModel().selectFirst();
 
         roleSection.getChildren().addAll(roleLabel, regRoleComboBox);
@@ -343,13 +356,15 @@ public class App extends Application {
         createAccountButton.setPrefHeight(50);
         createAccountButton.setTextFill(Color.WHITE);
         createAccountButton.setStyle("-fx-background-color: " + PRIMARY_GREEN + "; " +
-                                    "-fx-background-radius: 10; " +
-                                    "-fx-cursor: hand; " +
-                                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0, 0, 3);");
+                "-fx-background-radius: 10; " +
+                "-fx-cursor: hand; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0, 0, 3);");
 
         // Hover effects
-        createAccountButton.setOnMouseEntered(e -> createAccountButton.setStyle(createAccountButton.getStyle().replace(PRIMARY_GREEN, DARK_GREEN)));
-        createAccountButton.setOnMouseExited(e -> createAccountButton.setStyle(createAccountButton.getStyle().replace(DARK_GREEN, PRIMARY_GREEN)));
+        createAccountButton.setOnMouseEntered(
+                e -> createAccountButton.setStyle(createAccountButton.getStyle().replace(PRIMARY_GREEN, DARK_GREEN)));
+        createAccountButton.setOnMouseExited(
+                e -> createAccountButton.setStyle(createAccountButton.getStyle().replace(DARK_GREEN, PRIMARY_GREEN)));
 
         createAccountButton.setOnAction(e -> {
             try {
@@ -361,40 +376,69 @@ public class App extends Application {
                 String role = regRoleComboBox.getValue();
 
                 if (userId.isEmpty() || nama.isEmpty() || regUmurField.getText().isEmpty() ||
-                    email.isEmpty() || password.isEmpty() || role == null) {
-                    showModernAlert(Alert.AlertType.ERROR, "Registration Error", "Please fill in all fields to continue.");
+                        email.isEmpty() || password.isEmpty() || role == null) {
+                    showModernAlert(Alert.AlertType.ERROR, "Registration Error",
+                            "Please fill in all fields to continue.");
                     return;
                 }
 
                 if (userDAO.getUserByUserId(userId) != null) {
-                    showModernAlert(Alert.AlertType.ERROR, "Registration Error", "User ID already exists. Please choose another one.");
+                    showModernAlert(Alert.AlertType.ERROR, "Registration Error",
+                            "User ID already exists. Please choose another one.");
                     return;
                 }
 
                 User newUser = new User(userId, nama, umur, email, password, role);
-                userDAO.addUser(newUser);
-                showModernAlert(Alert.AlertType.INFORMATION, "Registration Success", 
-                    "🎉 Account created successfully for " + nama + " (" + role + ")!\nYou can now log in with your credentials.");
+                userDAO.addUser(newUser); // Menambahkan ke tabel Pengguna
+
+                // Menambahkan ke tabel spesifik berdasarkan peran
+                if ("Penanggung".equals(role)) {
+                    PenanggungDAO penanggungDAO = new PenanggungDAO();
+                    // Menggunakan constructor Penanggung yang tidak memerlukan 'pekerjaan' secara
+                    // eksplisit,
+                    // karena form registrasi saat ini tidak memintanya.
+                    // Model Penanggung akan menginisialisasi 'pekerjaan' ke string kosong.
+                    Penanggung newPenanggung = new Penanggung(userId, nama, umur, email, password);
+                    penanggungDAO.addPenanggung(newPenanggung);
+                } else if ("Tanggungan".equals(role)) {
+                    TanggunganDAO tanggunganDAO = new TanggunganDAO();
+                    // Form registrasi saat ini tidak meminta posisiKeluarga, pendidikan, pekerjaan
+                    // untuk Tanggungan.
+                    // Menggunakan string kosong sebagai default.
+                    // TODO: Pertimbangkan untuk menambahkan field ini ke form registrasi jika
+                    // diperlukan.
+                    Tanggungan newTanggungan = new Tanggungan(userId, nama, umur, email, password, "", "", "");
+                    tanggunganDAO.addTanggungan(newTanggungan);
+                } else if ("Admin".equals(role)) {
+                    AdminDAO adminDAO = new AdminDAO();
+                    // Untuk Admin, admin_id biasanya sama dengan user_id.
+                    Admin newAdmin = new Admin(userId, nama, umur, email, password, userId);
+                    adminDAO.addAdmin(newAdmin);
+                }
+
+                showModernAlert(Alert.AlertType.INFORMATION, "Registration Success",
+                        "🎉 Account created successfully for " + nama + " (" + role
+                                + ")!\nYou can now log in with your credentials.");
                 registerStage.close();
 
             } catch (NumberFormatException ex) {
                 showModernAlert(Alert.AlertType.ERROR, "Input Error", "Age must be a valid number.");
             } catch (Exception ex) {
-                showModernAlert(Alert.AlertType.ERROR, "Registration Failed", "An error occurred during registration: " + ex.getMessage());
+                showModernAlert(Alert.AlertType.ERROR, "Registration Failed",
+                        "An error occurred during registration: " + ex.getMessage());
                 ex.printStackTrace();
             }
         });
 
         registerCard.getChildren().addAll(
-            titleSection,
-            createFieldSection("User ID", regUserIdField),
-            createFieldSection("Full Name", regNamaField),
-            createFieldSection("Age", regUmurField),
-            createFieldSection("Email", regEmailField),
-            createFieldSection("Password", regPasswordField),
-            roleSection,
-            createAccountButton
-        );
+                titleSection,
+                createFieldSection("User ID", regUserIdField),
+                createFieldSection("Full Name", regNamaField),
+                createFieldSection("Age", regUmurField),
+                createFieldSection("Email", regEmailField),
+                createFieldSection("Password", regPasswordField),
+                roleSection,
+                createAccountButton);
 
         root.getChildren().add(registerCard);
         Scene regScene = new Scene(root, 500, 700);
@@ -419,11 +463,11 @@ public class App extends Application {
         field.setPrefHeight(45);
         field.setFont(Font.font("Segoe UI", 14));
         field.setStyle("-fx-background-color: white; " +
-                      "-fx-border-color: #E2E8F0; " +
-                      "-fx-border-width: 2; " +
-                      "-fx-border-radius: 8; " +
-                      "-fx-background-radius: 8; " +
-                      "-fx-padding: 12;");
+                "-fx-border-color: #E2E8F0; " +
+                "-fx-border-width: 2; " +
+                "-fx-border-radius: 8; " +
+                "-fx-background-radius: 8; " +
+                "-fx-padding: 12;");
 
         // Focus styling
         field.focusedProperty().addListener((obs, oldVal, newVal) -> {
@@ -444,11 +488,11 @@ public class App extends Application {
         field.setPrefHeight(45);
         field.setFont(Font.font("Segoe UI", 14));
         field.setStyle("-fx-background-color: white; " +
-                      "-fx-border-color: #E2E8F0; " +
-                      "-fx-border-width: 2; " +
-                      "-fx-border-radius: 8; " +
-                      "-fx-background-radius: 8; " +
-                      "-fx-padding: 12;");
+                "-fx-border-color: #E2E8F0; " +
+                "-fx-border-width: 2; " +
+                "-fx-border-radius: 8; " +
+                "-fx-background-radius: 8; " +
+                "-fx-padding: 12;");
 
         // Focus styling
         field.focusedProperty().addListener((obs, oldVal, newVal) -> {
@@ -474,10 +518,10 @@ public class App extends Application {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
-        
+
         // Style the alert dialog
         alert.getDialogPane().setStyle("-fx-font-family: 'Segoe UI'; -fx-font-size: 14px;");
-        
+
         alert.showAndWait();
     }
 
