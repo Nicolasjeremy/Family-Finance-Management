@@ -9,17 +9,18 @@ public class Tanggungan extends User {
     private String posisiKeluarga; // 'Posisi Keluarga' [cite: 153]
     private String pendidikan; // 'Pendidikan' [cite: 153]
     private String pekerjaan; // 'Pekerjaan' [cite: 153]
+    private String penanggungId; // Tambahkan atribut penanggungId
     // Note: 'Nama' and 'Umur' are listed in the document's Tanggungan attributes[cite: 153],
     // but are inherited from the User class. They are included here for completeness of doc mapping.
 
     // Constructor
     // Calls the superclass (User) constructor first
-    public Tanggungan(String userId, String nama, int umur, String email, String password, String posisiKeluarga, String pendidikan, String pekerjaan) {
-        // Tanggungan role is fixed
+    public Tanggungan(String userId, String nama, int umur, String email, String password, String posisiKeluarga, String pendidikan, String pekerjaan, String penanggungId) {
         super(userId, nama, umur, email, password, "Tanggungan");
         this.posisiKeluarga = posisiKeluarga;
         this.pendidikan = pendidikan;
         this.pekerjaan = pekerjaan;
+        this.penanggungId = penanggungId;
     }
 
     // --- Operations (Methods) specific to Tanggungan, based on Section 2.3.3 of the document ---
@@ -74,4 +75,6 @@ public class Tanggungan extends User {
     public void setPekerjaan(String pekerjaan) {
         this.pekerjaan = pekerjaan;
     }
+    public String getPenanggungId() { return penanggungId; }
+    public void setPenanggungId(String penanggungId) { this.penanggungId = penanggungId; }
 }

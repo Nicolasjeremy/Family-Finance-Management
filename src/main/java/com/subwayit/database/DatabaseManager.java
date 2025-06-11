@@ -30,8 +30,10 @@ public class DatabaseManager {
     public static void initializeDatabase() {
         System.out.println("Initializing database...");
         
-        // Create tables
+        // Panggil metode untuk membuat tabel yang dimodifikasi
         createPenggunaTable();
+        createPenanggungTable(); // <-- Baru/Modifikasi
+        createTanggunganTable(); // <-- Baru/Modifikasi
         createTransaksiTable();
         createUtangTable();
         createPaymentHistoryTable();
@@ -63,15 +65,16 @@ public class DatabaseManager {
     /**
      * Create Pengguna table
      */
+    // Metode createPenggunaTable() tetap sama
     private static void createPenggunaTable() {
         String sql = "CREATE TABLE IF NOT EXISTS Pengguna (" +
-                    "user_id TEXT PRIMARY KEY," +
-                    "nama TEXT NOT NULL," +
-                    "umur INTEGER NOT NULL," +
-                    "e_mail TEXT NOT NULL," +
-                    "password TEXT NOT NULL," +
-                    "role TEXT NOT NULL" +
-                    ");";
+                     "user_id TEXT PRIMARY KEY," +
+                     "nama TEXT NOT NULL," +
+                     "umur INTEGER NOT NULL," +
+                     "e_mail TEXT NOT NULL," +
+                     "password TEXT NOT NULL," +
+                     "role TEXT NOT NULL" +
+                     ");";
 
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
@@ -87,14 +90,17 @@ public class DatabaseManager {
      */
     private static void createTransaksiTable() {
         String sql = "CREATE TABLE IF NOT EXISTS Transaksi (" +
-                    "transaksi_id TEXT PRIMARY KEY," +
-                    "user_id TEXT NOT NULL," +
-                    "jumlah REAL NOT NULL," +
-                    "tanggal DATE NOT NULL," +
-                    "kategori TEXT NOT NULL," +
-                    "deskripsi TEXT," +
-                    "FOREIGN KEY (user_id) REFERENCES Pengguna(user_id)" +
-                    ");";
+                     "transaksi_id TEXT PRIMARY KEY," +
+                     "user_id TEXT NOT NULL," +
+                     "jenis TEXT NOT NULL," + // Add jenis
+                     "kategori TEXT NOT NULL," + // Add kategori
+                     "nominal REAL NOT NULL," +
+                     "tanggal_transaksi DATE NOT NULL," + // Renamed from 'tanggal'
+                     "bukti_transaksi TEXT," + // Add bukti_transaksi
+                     "is_rutin BOOLEAN NOT NULL," + // Add is_rutin
+                     "deskripsi TEXT," +
+                     "FOREIGN KEY (user_id) REFERENCES Pengguna(user_id)" +
+                     ");";
 
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
@@ -127,6 +133,52 @@ public class DatabaseManager {
             System.out.println("Utang table created successfully.");
         } catch (SQLException e) {
             System.err.println("Error creating Utang table: " + e.getMessage());
+        }
+    }
+
+        private static void createPenanggungTable() {
+        // Kolom 'anggota_tanggungan_ids' akan menyimpan daftar ID Tanggungan yang dipisahkan koma.
+        // Jika Anda ingin mengelola anggota secara lebih terstruktur, mungkin perlu tabel join Anggota_Keluarga
+        // yang hanya menghubungkan Penanggung dengan Tanggungan, tetapi tanpa model Keluarga.
+        // Untuk saat ini, mari kita pakai string dipisahkan koma untuk kesederhanaan ekstrem.
+        String sql = "CREATE TABLE IF NOT EXISTS Penanggung (" +
+                     "penanggung_id TEXT PRIMARY KEY," +
+                     "jumlah_pemasukan INTEGER NOT NULL DEFAULT 0," +
+                     "jumlah_pengeluaran INTEGER NOT NULL DEFAULT 0," +
+                     "pekerjaan TEXT," + // Tambahkan kolom pekerjaan
+                     "anggota_tanggungan_ids TEXT," + // Menyimpan ID Tanggungan yang dipisahkan koma
+                     "FOREIGN KEY (penanggung_id) REFERENCES Pengguna(user_id)" +
+                     ");";
+
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+            System.out.println("Penanggung table created successfully.");
+        } catch (SQLException e) {
+            System.err.println("Error creating Penanggung table: " + e.getMessage());
+        }
+    }
+
+        private static void createTanggunganTable() {
+        // Kolom 'penanggung_id' akan mengaitkan Tanggungan ke Penanggung-nya
+        String sql = "CREATE TABLE IF NOT EXISTS Tanggungan (" +
+                     "tanggungan_id TEXT PRIMARY KEY," +
+                     "posisi TEXT," +
+                     "nama TEXT NOT NULL," + // Diulang dari Pengguna, tapi sesuai doc
+                     "umur INTEGER NOT NULL," + // Diulang dari Pengguna, tapi sesuai doc
+                     "pendidikan TEXT," +
+                     "pekerjaan TEXT," +
+                     "penanggung_id TEXT," + // Tambahkan kolom penanggung_id
+                     "FOREIGN KEY (tanggungan_id) REFERENCES Pengguna(user_id)," +
+                     "FOREIGN KEY (penanggung_id) REFERENCES Penanggung(penanggung_id)" + // FK ke Penanggung
+                     ");";
+
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+            System.out.println("Tanggungan table created successfully.");
+        } catch (SQLException e) {
+            System.err.println("Error creating Tanggungan table: " + e.getMessage());
         }
     }
 

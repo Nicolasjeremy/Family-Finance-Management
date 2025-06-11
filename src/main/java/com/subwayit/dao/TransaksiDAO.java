@@ -106,6 +106,52 @@ public class TransaksiDAO {
         return transactions;
     }
 
+    public List<Transaksi> getTransactionsForMultipleUsers(List<String> userIds) {
+    List<Transaksi> transactions = new ArrayList<>();
+    if (userIds == null || userIds.isEmpty()) {
+        return transactions; // Return empty list if no users are provided
+    }
+
+    // Build a dynamic query with the correct number of placeholders for the IN clause
+    StringBuilder placeholders = new StringBuilder();
+    for (int i = 0; i < userIds.size(); i++) {
+        placeholders.append("?");
+        if (i < userIds.size() - 1) {
+            placeholders.append(",");
+        }
+    }
+
+    String sql = "SELECT * FROM Transaksi WHERE user_id IN (" + placeholders.toString() + ") ORDER BY tanggal_transaksi DESC";
+
+    try (Connection conn = DatabaseManager.connect();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        // Set the user IDs as parameters for the PreparedStatement
+        for (int i = 0; i < userIds.size(); i++) {
+            pstmt.setString(i + 1, userIds.get(i));
+        }
+
+        ResultSet rs = pstmt.executeQuery();
+        while (rs.next()) {
+            transactions.add(new Transaksi(
+                rs.getString("transaksi_id"),
+                rs.getString("user_id"),
+                rs.getString("jenis"),
+                rs.getString("kategori"),
+                rs.getDouble("nominal"),
+                rs.getDate("tanggal_transaksi").toLocalDate(),
+                rs.getString("bukti_transaksi"),
+                rs.getBoolean("is_rutin"),
+                rs.getString("deskripsi")
+            ));
+        }
+    } catch (SQLException e) {
+        System.err.println("Error getting transactions for multiple users: " + e.getMessage());
+        e.printStackTrace();
+    }
+    return transactions;
+}
+
     /**
      * Updates an existing transaction in the Transaksi table.
      * Matches by transaksi_id.

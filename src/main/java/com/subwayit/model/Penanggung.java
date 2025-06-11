@@ -1,29 +1,42 @@
 package com.subwayit.model;
 
 import java.util.ArrayList;
+import java.util.Arrays; // Untuk konversi string ke list
 import java.util.List;
+import java.util.stream.Collectors; // Untuk konversi list ke string
 
+/**
+ * Represents the main user or head of household in the SubwayIT system.
+ * Extends the base User class and has full access to the system.
+ */
 public class Penanggung extends User {
     private int jumlahPemasukan;
     private int jumlahPengeluaran;
-    private List<Tanggungan> anggotaTanggungan;
-    private String pekerjaan; // <--- ADD THIS ATTRIBUTE
+    private String pekerjaan; // Atribut pekerjaan sudah ada
+    // Atribut baru: menyimpan ID Tanggungan yang dipisahkan koma
+    private List<String> anggotaTanggunganIds; // Ubah dari List<Tanggungan> ke List<String>
 
-    public Penanggung(String userId, String nama, int umur, String email, String password) {
-        super(userId, nama, umur, email, password, "Penanggung");
-        this.jumlahPemasukan = 0;
-        this.jumlahPengeluaran = 0;
-        this.anggotaTanggungan = new ArrayList<>();
-        this.pekerjaan = ""; // Initialize
-    }
-
-    // Constructor to also set job (useful when retrieving from DB if job is stored)
+    // Constructor baru dengan pekerjaan
     public Penanggung(String userId, String nama, int umur, String email, String password, String pekerjaan) {
         super(userId, nama, umur, email, password, "Penanggung");
         this.jumlahPemasukan = 0;
         this.jumlahPengeluaran = 0;
-        this.anggotaTanggungan = new ArrayList<>();
         this.pekerjaan = pekerjaan;
+        this.anggotaTanggunganIds = new ArrayList<>(); // Inisialisasi kosong
+    }
+
+    // Constructor jika memuat dari DB, yang memiliki ID Tanggungan dalam bentuk string
+    public Penanggung(String userId, String nama, int umur, String email, String password, String pekerjaan, String anggotaTanggunganIdsString) {
+        super(userId, nama, umur, email, password, "Penanggung");
+        this.jumlahPemasukan = 0;
+        this.jumlahPengeluaran = 0;
+        this.pekerjaan = pekerjaan;
+        // Konversi string ID yang dipisahkan koma menjadi List<String>
+        if (anggotaTanggunganIdsString != null && !anggotaTanggunganIdsString.isEmpty()) {
+            this.anggotaTanggunganIds = new ArrayList<>(Arrays.asList(anggotaTanggunganIdsString.split(",")));
+        } else {
+            this.anggotaTanggunganIds = new ArrayList<>();
+        }
     }
 
     // --- Add getter and setter for pekerjaan ---
@@ -46,14 +59,14 @@ public class Penanggung extends User {
         // Actual implementation will involve interacting with Transaksi/Finansial objects and DAOs
     }
 
-    /**
-     * Adds a new dependent (Tanggungan) to the family. [cite: 148]
-     * @param tanggungan The Tanggungan object to add.
-     */
-    public void addDependent(Tanggungan tanggungan) {
-        this.anggotaTanggungan.add(tanggungan);
-        System.out.println(this.getNama() + " added dependent: " + tanggungan.getNama());
-        // Actual implementation might involve saving to database via a DAO
+    public void addAnggotaTanggunganId(String tanggunganId) {
+        if (!this.anggotaTanggunganIds.contains(tanggunganId)) {
+            this.anggotaTanggunganIds.add(tanggunganId);
+        }
+    }
+
+    public void removeAnggotaTanggunganId(String tanggunganId) {
+        this.anggotaTanggunganIds.remove(tanggunganId);
     }
 
     /**
@@ -127,11 +140,17 @@ public class Penanggung extends User {
         this.jumlahPengeluaran = jumlahPengeluaran;
     }
 
-    public List<Tanggungan> getAnggotaTanggungan() {
-        return anggotaTanggungan;
+    public List<String> getAnggotaTanggunganIds() {
+        return anggotaTanggunganIds;
     }
 
-    public void setAnggotaTanggungan(List<Tanggungan> anggotaTanggungan) {
-        this.anggotaTanggungan = anggotaTanggungan;
+    // Setter untuk daftar ID Tanggungan (saat memuat dari DB)
+    public void setAnggotaTanggunganIds(List<String> anggotaTanggunganIds) {
+        this.anggotaTanggunganIds = anggotaTanggunganIds;
+    }
+
+    // Helper method untuk mendapatkan ID Tanggungan dalam format string yang dipisahkan koma untuk disimpan ke DB
+    public String getAnggotaTanggunganIdsAsString() {
+        return String.join(",", anggotaTanggunganIds);
     }
 }
