@@ -1,920 +1,329 @@
-// package com.subwayit.gui;
+package com.subwayit.gui;
 
-// import com.subwayit.dao.UtangDAO;
-// import com.subwayit.dao.UtangDAO.UtangWithUserInfo; // Import nested class
-// import com.subwayit.model.Utang;
-// import com.subwayit.model.User;
-// import com.subwayit.model.Tanggungan; // Import Tanggungan
-// import com.subwayit.model.Penanggung; // Import Penanggung
+import com.subwayit.dao.*;
+import com.subwayit.dao.UtangDAO.UtangWithUserInfo;
+import com.subwayit.model.Penanggung;
+import com.subwayit.model.User;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
-// import javafx.collections.FXCollections;
-// import javafx.collections.ObservableList;
-// import javafx.geometry.Insets;
-// import javafx.geometry.Pos;
-// import javafx.scene.Scene;
-// import javafx.scene.control.Alert;
-// import javafx.scene.control.Button;
-// import javafx.scene.control.ButtonType;
-// import javafx.scene.control.Label;
-// import javafx.scene.control.ScrollPane;
-// import javafx.scene.control.TableColumn;
-// import javafx.scene.control.TableView;
-// import javafx.scene.control.TableCell; // Untuk styling cell khusus
-// import javafx.scene.control.cell.PropertyValueFactory;
-// import javafx.scene.layout.BorderPane;
-// import javafx.scene.layout.HBox;
-// import javafx.scene.layout.Priority;
-// import javafx.scene.layout.Region;
-// import javafx.scene.layout.VBox;
-// import javafx.scene.paint.Color;
-// import javafx.scene.text.Font;
-// import javafx.scene.text.FontWeight;
-// import javafx.scene.shape.Rectangle;
-// import javafx.stage.Stage;
+public class DebtPage {
 
-// import java.time.LocalDate;
-// import java.util.List;
-// import java.text.NumberFormat; // Untuk format Rupiah
-// import java.util.Locale; // Untuk format Rupiah
+    private Stage primaryStage;
+    private User loggedInUser;
 
-// public class DebtPage {
+    // --- All DAOs are now injected via the constructor ---
+    private UserDAO userDAO;
+    private PenanggungDAO penanggungDAO;
+    private TanggunganDAO tanggunganDAO;
+    private AdminDAO adminDAO;
+    private TransaksiDAO transaksiDAO;
+    private UtangDAO utangDAO;
 
-//     private Stage primaryStage;
-//     private User loggedInUser;
-//     private UtangDAO utangDAO;
-//     // Gunakan TableView generik, dan kemudian cast di refreshDebtTable
-//     private TableView<Utang> debtTable; // Ubah ke Utang
+    private TableView<UtangWithUserInfo> debtTable;
+    private ObservableList<UtangWithUserInfo> debtList;
 
-//     // Green Theme Color Palette (same as DashboardPage)
-//     private static final String PRIMARY_GREEN = "#86DA71";
-//     private static final String DARK_GREEN = "#6BB85A";
-//     private static final String LIGHT_GREEN = "#F0F9ED";
-//     private static final String TEXT_DARK = "#2D3748";
-//     private static final String TEXT_GRAY = "#64748B";
-//     private static final String RED = "#E53E3E";
+    // Summary Labels
+    private Label totalDebtValue = new Label("Rp 0");
+    private Label remainingDebtValue = new Label("Rp 0");
+    private Label overdueDebtValue = new Label("0");
 
-//     // Summary value labels
-//     private Label totalDebtValue = new Label();
-//     private Label thisMonthPaymentValue = new Label();
-//     private Label overdueDebtValue = new Label();
-//     private Label activeDebtValue = new Label();
+    // Theme Colors
+    private static final String PRIMARY_GREEN = "#86DA71";
+    private static final String DARK_GREEN = "#6BB85A";
+    private static final String TEXT_DARK = "#2D3748";
+    private static final String RED = "#E53E3E";
 
-//     // Konstruktor disesuaikan untuk Dependency Injection
-//     // Namun, utangDAO tidak punya constructor berparameter, jadi inisialisasi di sini saja.
-//     public DebtPage(Stage primaryStage, User user) {
-//         this.primaryStage = primaryStage;
-//         this.loggedInUser = user;
-//         this.utangDAO = new UtangDAO(new com.subwayit.dao.UserDAO()); // UtangDAO membutuhkan UserDAO
-//     }
+    // --- Constructor now accepts all dependencies ---
+    public DebtPage(Stage primaryStage, User user, UserDAO userDAO, PenanggungDAO penanggungDAO, TanggunganDAO tanggunganDAO, AdminDAO adminDAO, TransaksiDAO transaksiDAO, UtangDAO utangDAO) {
+        this.primaryStage = primaryStage;
+        this.loggedInUser = user;
+        this.userDAO = userDAO;
+        this.penanggungDAO = penanggungDAO;
+        this.tanggunganDAO = tanggunganDAO;
+        this.adminDAO = adminDAO;
+        this.transaksiDAO = transaksiDAO;
+        this.utangDAO = utangDAO; // Use injected DAO
+        this.debtList = FXCollections.observableArrayList();
+    }
 
-//     public Scene createScene() {
-//         HBox topNav = createTopNavigationBar();
-//         VBox mainContent = createMainContentArea();
+    public Scene createScene() {
+        BorderPane root = new BorderPane();
+        root.setTop(createTopNavigationBar());
+        root.setCenter(new ScrollPane(createMainContentArea()));
+        root.setStyle("-fx-background-color: #F7FAFC;");
+        return new Scene(root, 1200, 800);
+    }
 
-//         BorderPane root = new BorderPane();
-//         root.setTop(topNav);
-//         root.setCenter(mainContent);
-        
-//         root.setStyle("-fx-background-color: white;");
+    private HBox createTopNavigationBar() {
+        HBox navBar = new HBox(20);
+        navBar.setPadding(new Insets(15, 30, 15, 30));
+        navBar.setAlignment(Pos.CENTER_LEFT);
+        navBar.setStyle("-fx-background-color: " + PRIMARY_GREEN + ";");
 
-//         return new Scene(root, 1200, 800);
-//     }
+        Label logo = new Label("SUBWAYIT");
+        logo.setFont(Font.font("Segoe UI", FontWeight.BOLD, 26));
+        logo.setTextFill(Color.WHITE);
 
-//     private HBox createTopNavigationBar() {
-//         HBox navBar = new HBox(20);
-//         navBar.setPadding(new Insets(15, 30, 15, 30));
-//         navBar.setAlignment(Pos.CENTER_LEFT);
-        
-//         navBar.setStyle("-fx-background-color: " + PRIMARY_GREEN + "; " +
-//                         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8, 0, 0, 2);");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-//         Label logo = new Label("SUBWAYIT");
-//         logo.setFont(Font.font("Segoe UI", FontWeight.BOLD, 26));
-//         logo.setTextFill(Color.WHITE);
-//         logo.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 1, 0, 0, 1);");
+        // --- Navigation now correctly passes all DAOs ---
+        Button dashboardsBtn = createNavLink("Dashboard", "📊");
+        dashboardsBtn.setOnAction(e -> {
+            DashboardPage dp = new DashboardPage(primaryStage, loggedInUser, userDAO, penanggungDAO, tanggunganDAO, adminDAO, transaksiDAO, utangDAO);
+            primaryStage.setScene(dp.createScene());
+        });
 
-//         Region spacer = new Region();
-//         HBox.setHgrow(spacer, Priority.ALWAYS);
+        Button membersBtn = createNavLink("Members", "👥");
+        membersBtn.setOnAction(e -> {
+            MembersPage mp = new MembersPage(primaryStage, loggedInUser, userDAO, penanggungDAO, tanggunganDAO, adminDAO, transaksiDAO, utangDAO);
+            primaryStage.setScene(mp.createScene());
+        });
 
-//         Button homeBtn = createNavLink("Home", "🏠");
-//         homeBtn.setOnAction(e -> {
-//             DashboardPage dashboardPage = new DashboardPage(primaryStage, loggedInUser);
-//             primaryStage.setScene(dashboardPage.createScene());
-//             primaryStage.centerOnScreen();
-//         });
-        
-//         Button dashboardsBtn = createNavLink("Dashboard", "📊");
-//         dashboardsBtn.setOnAction(e -> {
-//             DashboardPage dashboardPage = new DashboardPage(primaryStage, loggedInUser);
-//             primaryStage.setScene(dashboardPage.createScene());
-//             primaryStage.centerOnScreen();
-//         });
-        
-//         Button membersBtn = createNavLink("Members", "👥");
-//         membersBtn.setOnAction(e -> {
-//             MembersPage membersPage = new MembersPage(primaryStage, loggedInUser);
-//             primaryStage.setScene(membersPage.createScene());
-//             primaryStage.centerOnScreen();
-//         });
+        Button debtBtn = createNavLink("Debt", "💰");
+        debtBtn.setStyle(debtBtn.getStyle() + "-fx-background-color: rgba(255,255,255,0.2);");
 
-//         Button debtBtn = createNavLink("Debt", "💰");
-//         debtBtn.setStyle(debtBtn.getStyle() +
-//             "-fx-background-color: rgba(255, 255, 255, 0.2); " +
-//             "-fx-border-color: rgba(255, 255, 255, 0.4); " +
-//             "-fx-border-width: 1px;");
+        navBar.getChildren().addAll(logo, spacer, dashboardsBtn, membersBtn, debtBtn);
+        return navBar;
+    }
 
-//         navBar.getChildren().addAll(logo, spacer, homeBtn, dashboardsBtn, membersBtn, debtBtn);
-//         return navBar;
-//     }
+    private VBox createMainContentArea() {
+        VBox content = new VBox(30);
+        content.setPadding(new Insets(30, 40, 30, 40));
+        content.getChildren().addAll(createHeader(), createSummaryCards(), createTableSection());
+        return content;
+    }
 
-//     private Button createNavLink(String text, String icon) {
-//         Button btn = new Button(icon + " " + text);
-//         btn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
-//         btn.setPadding(new Insets(10, 16, 10, 16));
-//         btn.setStyle("-fx-background-color: transparent; " +
-//                      "-fx-text-fill: white; " +
-//                      "-fx-background-radius: 8; " +
-//                      "-fx-border-radius: 8; " +
-//                      "-fx-cursor: hand;");
+    private HBox createHeader() {
+        HBox header = new HBox(15);
+        header.setAlignment(Pos.CENTER_LEFT);
         
-//         btn.setOnMouseEntered(e -> btn.setStyle(btn.getStyle() +
-//             "-fx-background-color: rgba(255,255,255,0.15);"));
-//         btn.setOnMouseExited(e -> btn.setStyle(btn.getStyle()
-//             .replace("-fx-background-color: rgba(255,255,255,0.15);", "")));
-        
-//         return btn;
-//     }
+        VBox welcomeSection = new VBox(5);
+        Label titleLabel = new Label("Manajemen Utang & Cicilan");
+        titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
+        welcomeSection.getChildren().add(titleLabel);
 
-//     private VBox createMainContentArea() {
-//         VBox content = new VBox(30);
-//         content.setPadding(new Insets(30, 40, 30, 40));
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-//         HBox header = createHeader();
-//         HBox summary = createSummaryCards();
-//         VBox tableSection = createTableSection();
-
-//         content.getChildren().addAll(header, summary, tableSection);
-//         return content;
-//     }
-
-//     private HBox createHeader() {
-//         HBox header = new HBox(15);
-//         header.setAlignment(Pos.CENTER_LEFT);
-        
-//         VBox welcomeSection = new VBox(8);
-        
-//         String titleText = "Penanggung".equals(loggedInUser.getRole()) ?
-//             "Family Debt Management 💰" : "Your Debt Management 💰";
-//         Label welcomeLabel = new Label("Hi, " + loggedInUser.getNama() + " - " + titleText);
-//         welcomeLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
-//         welcomeLabel.setTextFill(Color.web(TEXT_DARK));
-        
-//         String descText = "Penanggung".equals(loggedInUser.getRole()) ?
-//             "📊 Manage and pay all family debt obligations" :
-//             "📊 Manage your debt portfolio and payment schedule";
-//         Label descLabel = new Label(descText);
-//         descLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 16));
-//         descLabel.setTextFill(Color.web(TEXT_GRAY));
-        
-//         welcomeSection.getChildren().addAll(welcomeLabel, descLabel);
-        
-//         Region spacer = new Region();
-//         HBox.setHgrow(spacer, Priority.ALWAYS);
-
-//         Button viewReportsBtn = createActionButton("📈 View Reports", "#EEEEEE", "#DDDDDD");
-//         viewReportsBtn.setTextFill(Color.web(TEXT_DARK));
-        
-//         Button addDebtBtn = createActionButton("➕ Add Debt", PRIMARY_GREEN, DARK_GREEN);
-//         addDebtBtn.setTextFill(Color.WHITE);
-        
-//         // Action for Add Debt Button - based on role
-//         addDebtBtn.setOnAction(e -> {
-//             if (loggedInUser instanceof Penanggung) { // Only Penanggung can add debt
-//                 AddDebtForm form = new AddDebtForm((Penanggung) loggedInUser);
-//                 form.display();
-//                 refreshDebtTable();
-//                 updateDebtSummary();
-//             } else {
-//                 showAlert(Alert.AlertType.WARNING, "Akses Ditolak", "Hanya Penanggung yang dapat menambahkan utang baru.");
-//             }
-//         });
-
-//         HBox buttonGroup = new HBox(15);
-//         // addDebtBtn hanya tampil jika user adalah Penanggung
-//         if (loggedInUser instanceof Penanggung) {
-//              buttonGroup.getChildren().addAll(viewReportsBtn, addDebtBtn);
-//         } else {
-//              buttonGroup.getChildren().add(viewReportsBtn);
-//         }
-        
-//         header.getChildren().addAll(welcomeSection, spacer, buttonGroup);
-//         return header;
-//     }
-
-//     private Button createActionButton(String text, String bgColor, String hoverColor) {
-//         Button btn = new Button(text);
-//         btn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
-//         btn.setPadding(new Insets(12, 20, 12, 20));
-//         btn.setStyle("-fx-background-color: " + bgColor + "; " +
-//                      "-fx-background-radius: 8; " +
-//                      "-fx-cursor: hand; " +
-//                      "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 2);");
-        
-//         btn.setOnMouseEntered(e -> btn.setStyle(btn.getStyle().replace(bgColor, hoverColor)));
-//         btn.setOnMouseExited(e -> btn.setStyle(btn.getStyle().replace(hoverColor, bgColor)));
-        
-//         return btn;
-//     }
-
-//     private HBox createSummaryCards() {
-//         HBox summary = new HBox(20);
-//         summary.setAlignment(Pos.CENTER);
-        
-//         VBox totalCard = createSummaryCard("Total Jumlah Utang", totalDebtValue, "📊"); // Ubah teks
-//         VBox paymentCard = createSummaryCard("Pembayaran Bulan Ini", thisMonthPaymentValue, "💸"); // Ubah teks
-//         VBox overdueCard = createSummaryCard("Utang Jatuh Tempo", overdueDebtValue, "⚠️"); // Ubah teks
-//         VBox activeCard = createSummaryCard("Utang Aktif", activeDebtValue, "📈"); // Ubah teks
-        
-//         summary.getChildren().addAll(totalCard, paymentCard, overdueCard, activeCard);
-//         return summary;
-//     }
-
-//     private VBox createSummaryCard(String title, Label value, String icon) {
-//         VBox card = new VBox(12);
-//         card.setAlignment(Pos.TOP_LEFT);
-//         card.setPadding(new Insets(20, 20, 20, 20));
-//         card.setPrefWidth(280);
-        
-//         card.setStyle("-fx-background-color: white; " +
-//                       "-fx-background-radius: 8; " +
-//                       "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2); " +
-//                       "-fx-border-color: #E2E8F0; " +
-//                       "-fx-border-width: 1; " +
-//                       "-fx-border-radius: 8;");
-
-//         HBox titleRow = new HBox(10);
-//         titleRow.setAlignment(Pos.CENTER_LEFT);
-        
-//         Label iconLabel = new Label(icon);
-//         iconLabel.setFont(Font.font(18));
-        
-//         Label titleLabel = new Label(title);
-//         titleLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
-//         titleLabel.setTextFill(Color.web(TEXT_GRAY));
-        
-//         titleRow.getChildren().addAll(iconLabel, titleLabel);
-        
-//         value.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
-//         value.setTextFill(Color.web(TEXT_DARK));
-        
-//         Rectangle underline = new Rectangle(40, 3);
-//         underline.setFill(Color.web(PRIMARY_GREEN));
-//         underline.setArcWidth(3);
-//         underline.setArcHeight(3);
-        
-//         card.getChildren().addAll(titleRow, value, underline);
-        
-//         card.setOnMouseEntered(e -> card.setStyle(card.getStyle() +
-//             "-fx-border-color: " + PRIMARY_GREEN + ";"));
-//         card.setOnMouseExited(e -> card.setStyle(card.getStyle()
-//             .replace("-fx-border-color: " + PRIMARY_GREEN + ";", "-fx-border-color: #E2E8F0;")));
-        
-//         return card;
-//     }
-
-//     private VBox createTableSection() {
-//         VBox tableSection = new VBox(20);
-        
-//         HBox sectionHeader = new HBox(15);
-//         sectionHeader.setAlignment(Pos.CENTER_LEFT);
-        
-//         Rectangle accentBar = new Rectangle(4, 30);
-//         accentBar.setFill(Color.web(PRIMARY_GREEN));
-//         accentBar.setArcWidth(4);
-//         accentBar.setArcHeight(4);
-        
-//         String titleText = "Penanggung".equals(loggedInUser.getRole()) ?
-//             "Manajemen Utang Keluarga" : "Manajemen Utang Anda"; // Ubah teks
-//         Label tableTitle = new Label(titleText);
-//         tableTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
-//         tableTitle.setTextFill(Color.web(TEXT_DARK));
-        
-//         VBox titleSection = new VBox(5);
-//         String subtitleText = "Penanggung".equals(loggedInUser.getRole()) ?
-//             "💳 Lacak dan bayar semua kewajiban utang keluarga" :
-//             "💳 Lacak dan kelola portofolio utang Anda"; // Ubah teks
-//         Label subtitle = new Label(subtitleText);
-//         subtitle.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 14));
-//         subtitle.setTextFill(Color.web(TEXT_GRAY));
-        
-//         titleSection.getChildren().addAll(tableTitle, subtitle);
-        
-//         Region spacer = new Region();
-//         HBox.setHgrow(spacer, Priority.ALWAYS);
-        
-//         Button allDebtsBtn = new Button("🗂️ Semua Utang"); // Ubah teks
-//         allDebtsBtn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 13));
-//         allDebtsBtn.setPadding(new Insets(8, 16, 8, 16));
-//         allDebtsBtn.setStyle("-fx-background-color: " + LIGHT_GREEN + "; " +
-//                              "-fx-text-fill: " + DARK_GREEN + "; " +
-//                              "-fx-background-radius: 8; " +
-//                              "-fx-cursor: hand;");
-        
-//         sectionHeader.getChildren().addAll(accentBar, titleSection, spacer, allDebtsBtn);
-        
-//         // Create appropriate table based on user role
-//         if (loggedInUser instanceof Penanggung) {
-//             debtTable = createFamilyDebtTable(); // Tabel untuk Penanggung
-//         } else {
-//             debtTable = createPersonalDebtTable(); // Tabel untuk Tanggungan/Admin
-//         }
-        
-//         refreshDebtTable();
-//         updateDebtSummary();
-        
-//         tableSection.getChildren().addAll(sectionHeader, debtTable);
-//         return tableSection;
-//     }
-
-//     // Tabel untuk Penanggung untuk melihat semua utang keluarga
-//     private TableView<UtangWithUserInfo> createFamilyDebtTable() {
-//         TableView<UtangWithUserInfo> table = new TableView<>();
-//         table.setPrefHeight(400);
-        
-//         table.setStyle("-fx-background-color: white; " +
-//                        "-fx-background-radius: 8; " +
-//                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2); " +
-//                        "-fx-border-color: #E2E8F0; " +
-//                        "-fx-border-width: 1; " +
-//                        "-fx-border-radius: 8;");
-
-//         // Kolom Pemilik Utang (baru untuk tampilan keluarga)
-//         TableColumn<UtangWithUserInfo, String> ownerCol = new TableColumn<>("Pemilik Utang"); // Ubah teks
-//         ownerCol.setCellValueFactory(new PropertyValueFactory<>("userName"));
-//         ownerCol.setPrefWidth(110);
-//         styleTableColumn(ownerCol);
-
-//         TableColumn<UtangWithUserInfo, String> idCol = new TableColumn<>("ID Utang"); // Ubah teks
-//         idCol.setCellValueFactory(new PropertyValueFactory<>("utangId"));
-//         idCol.setPrefWidth(70);
-//         styleTableColumn(idCol);
-
-//         TableColumn<UtangWithUserInfo, String> creditorCol = new TableColumn<>("Kreditor"); // Ubah teks
-//         creditorCol.setCellValueFactory(new PropertyValueFactory<>("creditor"));
-//         creditorCol.setPrefWidth(100);
-//         styleTableColumn(creditorCol);
-
-//         TableColumn<UtangWithUserInfo, Double> originalCol = new TableColumn<>("Asli"); // Ubah teks
-//         originalCol.setCellValueFactory(new PropertyValueFactory<>("jumlah"));
-//         originalCol.setPrefWidth(90);
-//         styleTableColumn(originalCol);
-        
-//         originalCol.setCellFactory(col -> new TableCell<>() {
-//             @Override
-//             protected void updateItem(Double val, boolean empty) {
-//                 super.updateItem(val, empty);
-//                 if (empty || val == null) {
-//                     setText(null);
-//                     setStyle("");
-//                 } else {
-//                     setText("Rp " + formatRupiah(val));
-//                     setStyle("-fx-text-fill: " + TEXT_GRAY + "; -fx-font-weight: bold;");
-//                 }
-//             }
-//         });
-
-//         // Kolom baru untuk Tingkat Bunga
-//         TableColumn<UtangWithUserInfo, Double> interestCol = new TableColumn<>("Bunga"); // Ubah teks
-//         interestCol.setCellValueFactory(new PropertyValueFactory<>("bunga"));
-//         interestCol.setPrefWidth(80);
-//         styleTableColumn(interestCol);
-        
-//         interestCol.setCellFactory(col -> new TableCell<>() {
-//             @Override
-//             protected void updateItem(Double val, boolean empty) {
-//                 super.updateItem(val, empty);
-//                 if (empty || val == null) {
-//                     setText(null);
-//                     setStyle("");
-//                 } else {
-//                     setText(String.format("%.2f%%", val * 100));
-//                     setStyle("-fx-text-fill: " + TEXT_DARK + "; -fx-font-weight: medium;");
-//                 }
-//             }
-//         });
-
-//         // Kolom baru untuk Total dengan Bunga
-//         TableColumn<UtangWithUserInfo, Double> totalWithInterestCol = new TableColumn<>("Total + Bunga"); // Ubah teks
-//         totalWithInterestCol.setCellValueFactory(cellData -> {
-//             return new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getTotalWithInterest());
-//         });
-//         totalWithInterestCol.setPrefWidth(110);
-//         styleTableColumn(totalWithInterestCol);
-        
-//         totalWithInterestCol.setCellFactory(col -> new TableCell<>() {
-//             @Override
-//             protected void updateItem(Double val, boolean empty) {
-//                 super.updateItem(val, empty);
-//                 if (empty || val == null) {
-//                     setText(null);
-//                     setStyle("");
-//                 } else {
-//                     setText("Rp " + formatRupiah(val));
-//                     setStyle("-fx-text-fill: " + DARK_GREEN + "; -fx-font-weight: bold;");
-//                 }
-//             }
-//         });
-
-//         TableColumn<UtangWithUserInfo, Double> remainingCol = new TableColumn<>("Sisa"); // Ubah teks
-//         remainingCol.setCellValueFactory(new PropertyValueFactory<>("sisaUtang"));
-//         remainingCol.setPrefWidth(100);
-//         styleTableColumn(remainingCol);
-        
-//         remainingCol.setCellFactory(col -> new TableCell<>() {
-//             @Override
-//             protected void updateItem(Double val, boolean empty) {
-//                 super.updateItem(val, empty);
-//                 if (empty || val == null) {
-//                     setText(null);
-//                     setStyle("");
-//                 } else {
-//                     setText("Rp " + formatRupiah(val));
-//                     setStyle("-fx-text-fill: " + RED + "; -fx-font-weight: bold;");
-//                 }
-//             }
-//         });
-
-//         TableColumn<UtangWithUserInfo, String> estimatedCol = new TableColumn<>("Est. Bulanan"); // Ubah teks
-//         estimatedCol.setCellValueFactory(new PropertyValueFactory<>("formattedEstimasiBulanan"));
-//         estimatedCol.setPrefWidth(100);
-//         styleTableColumn(estimatedCol);
-
-//         TableColumn<UtangWithUserInfo, String> dueDateCol = new TableColumn<>("Tanggal Jatuh Tempo"); // Ubah teks
-//         dueDateCol.setCellValueFactory(new PropertyValueFactory<>("formattedDueDate"));
-//         dueDateCol.setPrefWidth(80);
-//         styleTableColumn(dueDateCol);
-
-//         TableColumn<UtangWithUserInfo, String> statusCol = new TableColumn<>("Status");
-//         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
-//         statusCol.setPrefWidth(90);
-//         styleTableColumn(statusCol);
-        
-//         statusCol.setCellFactory(col -> new TableCell<>() {
-//             @Override
-//             protected void updateItem(String status, boolean empty) {
-//                 super.updateItem(status, empty);
-//                 if (empty || status == null) {
-//                     setText(null);
-//                     setStyle("");
-//                 } else {
-//                     setText(status);
-//                     if (status.toLowerCase().contains("lunas")) {
-//                         setStyle("-fx-text-fill: " + DARK_GREEN + "; -fx-font-weight: bold;");
-//                     } else {
-//                         setStyle("-fx-text-fill: " + RED + "; -fx-font-weight: bold;");
-//                     }
-//                 }
-//             }
-//         });
-
-//         // Kolom Aksi untuk Penanggung (Bayar & Lihat)
-//         TableColumn<UtangWithUserInfo, Void> actionCol = new TableColumn<>("Aksi"); // Ubah teks
-//         actionCol.setPrefWidth(140);
-//         styleTableColumn(actionCol);
-        
-//         actionCol.setCellFactory(col -> new TableCell<>() {
-//             // Ubah createTableButton untuk menggunakan warna tema
-//             private final Button payBtn = createTableButton("💳 Bayar", LIGHT_GREEN, "#D0E8C5", DARK_GREEN);
-//             private final Button viewBtn = createTableButton("👁️ Lihat", "#E3F2FD", "#BBDEFB", "#1976D2");
+        // --- FIX: Check user role before casting and creating the form ---
+        if ("Penanggung".equals(loggedInUser.getRole())) {
+            Button addDebtBtn = new Button("➕ Tambah Utang");
+            addDebtBtn.setStyle("-fx-background-color: " + PRIMARY_GREEN + "; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8;");
             
-//             {
-//                 payBtn.setOnAction(e -> {
-//                     UtangWithUserInfo utang = getTableView().getItems().get(getIndex());
-                    
-//                     if (utang.getSisaUtang() <= 0) {
-//                         showAlert(Alert.AlertType.INFORMATION, "Utang Lunas", "Utang ini sudah lunas sepenuhnya."); // Ubah teks
-//                         return;
-//                     }
-                    
-//                     // Buat objek Penanggung (dari loggedInUser) untuk form pembayaran
-//                     Penanggung penanggung = new Penanggung(
-//                         loggedInUser.getUserId(),
-//                         loggedInUser.getNama(),
-//                         loggedInUser.getUmur(),
-//                         loggedInUser.getEmail(),
-//                         loggedInUser.getPassword(),
-//                         ((Penanggung)loggedInUser).getPekerjaan() // Ambil pekerjaan dari Penanggung
-//                     );
-                    
-//                     // Konversi UtangWithUserInfo ke Utang untuk form pembayaran
-//                     Utang utangForPayment = new Utang(
-//                         utang.getUtangId(),
-//                         utang.getPenanggungId(), // Gunakan penanggungId
-//                         utang.getJumlah(),
-//                         utang.getBunga(),
-//                         utang.getTanggalJatuhTempo(),
-//                         utang.getStatus(),
-//                         utang.getCreditor()
-//                     );
-//                     utangForPayment.setSisaUtang(utang.getSisaUtang()); // Set sisa_utang
+            addDebtBtn.setOnAction(e -> {
+                // Because we've already checked the role, this cast is now safe.
+                Penanggung penanggung = penanggungDAO.getPenanggungById(loggedInUser.getUserId());
+                if (penanggung != null) {
+                    AddDebtForm form = new AddDebtForm(penanggung, tanggunganDAO, utangDAO, null);
+                    form.display();
+                    refreshDebtTable();
+                } else {
+                    // Handle rare case where Penanggung data might be inconsistent
+                    // showAlert(Alert.AlertType.ERROR, "Data Error", "Could not load Penanggung details.");
+                }
+            });
+            header.getChildren().addAll(welcomeSection, spacer, addDebtBtn);
+        } else {
+             header.getChildren().addAll(welcomeSection, spacer);
+        }
+        return header;
+    }
 
-//                     AddPayDebtForm payForm = new AddPayDebtForm(penanggung, utangForPayment);
-//                     payForm.display();
-//                     refreshDebtTable();
-//                     updateDebtSummary();
-//                 });
+    private HBox createSummaryCards() {
+        HBox summary = new HBox(20);
+        summary.getChildren().addAll(
+            createSummaryCard("Total Pokok Utang", totalDebtValue, TEXT_DARK),
+            createSummaryCard("Sisa Tagihan Aktif", remainingDebtValue, RED),
+            createSummaryCard("Utang Jatuh Tempo", overdueDebtValue, RED)
+        );
+        return summary;
+    }
+    
+    private VBox createTableSection() {
+        VBox tableSection = new VBox(20);
+        debtTable = createDebtTable();
+        refreshDebtTable();
+        tableSection.getChildren().add(debtTable);
+        return tableSection;
+    }
 
-//                 viewBtn.setOnAction(e -> {
-//                     UtangWithUserInfo utang = getTableView().getItems().get(getIndex());
-//                     showFamilyDebtDetails(utang);
-//                 });
-//             }
+    private TableView<UtangWithUserInfo> createDebtTable() {
+        TableView<UtangWithUserInfo> table = new TableView<>();
+        table.setPlaceholder(new Label("Tidak ada data utang ditemukan."));
+
+        TableColumn<UtangWithUserInfo, String> ownerCol = new TableColumn<>("Pemilik");
+        ownerCol.setCellValueFactory(new PropertyValueFactory<>("userName"));
+
+        TableColumn<UtangWithUserInfo, String> creditorCol = new TableColumn<>("Kreditor");
+        creditorCol.setCellValueFactory(new PropertyValueFactory<>("creditor"));
+
+        TableColumn<UtangWithUserInfo, Double> amountCol = new TableColumn<>("Jumlah Pokok");
+        amountCol.setCellValueFactory(new PropertyValueFactory<>("jumlah"));
+        amountCol.setCellFactory(tc -> createRupiahCell(false));
+
+        TableColumn<UtangWithUserInfo, Double> remainingCol = new TableColumn<>("Sisa Tagihan");
+        remainingCol.setCellValueFactory(new PropertyValueFactory<>("sisaUtang"));
+        remainingCol.setCellFactory(tc -> createRupiahCell(true));
+
+        TableColumn<UtangWithUserInfo, LocalDate> dueDateCol = new TableColumn<>("Jatuh Tempo");
+        dueDateCol.setCellValueFactory(new PropertyValueFactory<>("tanggalJatuhTempo"));
+
+        TableColumn<UtangWithUserInfo, String> statusCol = new TableColumn<>("Status");
+        statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
+
+        TableColumn<UtangWithUserInfo, Void> actionCol = createActionColumn();
+
+        table.getColumns().addAll(ownerCol, creditorCol, amountCol, remainingCol, dueDateCol, statusCol, actionCol);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        return table;
+    }
+
+    private void refreshDebtTable() {
+        List<String> userIdsToFetch = new ArrayList<>();
+        if ("Penanggung".equals(loggedInUser.getRole())) {
+            Penanggung p = penanggungDAO.getPenanggungById(loggedInUser.getUserId());
+            userIdsToFetch.add(p.getUserId());
+            if (p.getAnggotaTanggunganIds() != null) {
+                userIdsToFetch.addAll(p.getAnggotaTanggunganIds());
+            }
+        } else {
+            userIdsToFetch.add(loggedInUser.getUserId());
+        }
+        
+        List<UtangWithUserInfo> debts = utangDAO.getDebtsWithUserInfo(userIdsToFetch);
+        debtList.setAll(debts);
+        debtTable.setItems(debtList);
+        updateDebtSummary();
+    }
+
+    private void updateDebtSummary() {
+        double totalAmount = debtList.stream().mapToDouble(UtangWithUserInfo::getJumlah).sum();
+        double remainingAmount = debtList.stream().mapToDouble(UtangWithUserInfo::getSisaUtang).sum();
+        long overdueCount = debtList.stream().filter(u -> u.getSisaUtang() > 0 && u.getTanggalJatuhTempo().isBefore(LocalDate.now())).count();
+
+        totalDebtValue.setText(formatRupiah(totalAmount));
+        remainingDebtValue.setText(formatRupiah(remainingAmount));
+        overdueDebtValue.setText(String.valueOf(overdueCount));
+    }
+
+    private TableColumn<UtangWithUserInfo, Void> createActionColumn() {
+        TableColumn<UtangWithUserInfo, Void> actionCol = new TableColumn<>("Tindakan");
+        actionCol.setCellFactory(param -> new TableCell<>() {
+            private final Button payBtn = new Button("Bayar");
+            private final Button editBtn = new Button("Edit");
+            private final HBox pane = new HBox(5, payBtn, editBtn);
             
-//             @Override
-//             protected void updateItem(Void item, boolean empty) {
-//                 super.updateItem(item, empty);
-//                 if (empty) {
-//                     setGraphic(null);
-//                 } else {
-//                     HBox actionPane = new HBox(8, payBtn, viewBtn);
-//                     setGraphic(actionPane);
-//                 }
-//             }
-//         });
+        {
+            pane.setAlignment(Pos.CENTER);
+            payBtn.setStyle("-fx-background-color: " + DARK_GREEN + "; -fx-text-fill: white; -fx-font-size: 10px;");
+            editBtn.setStyle("-fx-background-color: #A0AEC0; -fx-text-fill: white; -fx-font-size: 10px;");
 
-//         table.getColumns().addAll(ownerCol, idCol, creditorCol, originalCol, interestCol, totalWithInterestCol, remainingCol, estimatedCol, dueDateCol, statusCol, actionCol);
-//         return table;
-//     }
+            payBtn.setOnAction(event -> {
+                UtangWithUserInfo utang = getTableView().getItems().get(getIndex());
+                // FIX: First, get the full Penanggung object from the database
+                Penanggung penanggung = penanggungDAO.getPenanggungById(loggedInUser.getUserId());
+                if (penanggung != null) {
+                    AddPayDebtForm form = new AddPayDebtForm(penanggung, utang, utangDAO);
+                    form.display();
+                    refreshDebtTable();
+                } else {
+                    // showAlert(Alert.AlertType.ERROR, "Error", "Tidak dapat memuat detail Penanggung.");
+                }
+            });
 
-//     // Tabel asli untuk utang pribadi Tanggungan
-//     private TableView<Utang> createPersonalDebtTable() {
-//         TableView<Utang> table = new TableView<>();
-//         table.setPrefHeight(400);
-        
-//         table.setStyle("-fx-background-color: white; " +
-//                        "-fx-background-radius: 8; " +
-//                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2); " +
-//                        "-fx-border-color: #E2E8F0; " +
-//                        "-fx-border-width: 1; " +
-//                        "-fx-border-radius: 8;");
+            editBtn.setOnAction(event -> {
+                UtangWithUserInfo utang = getTableView().getItems().get(getIndex());
+                 // FIX: First, get the full Penanggung object from the database
+                Penanggung penanggung = penanggungDAO.getPenanggungById(loggedInUser.getUserId());
+                 if (penanggung != null) {
+                    // Pass the fetched Penanggung object to the form
+                    AddDebtForm form = new AddDebtForm(penanggung, tanggunganDAO, utangDAO, utang);
+                    form.display();
+                    refreshDebtTable();
+                } else {
+                    // showAlert(Alert.AlertType.ERROR, "Error", "Tidak dapat memuat detail Penanggung.");
+                }
+            });
+        }
 
-//         TableColumn<Utang, String> idCol = new TableColumn<>("ID Utang"); // Ubah teks
-//         idCol.setCellValueFactory(new PropertyValueFactory<>("utangId"));
-//         idCol.setPrefWidth(80);
-//         styleTableColumn(idCol);
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || !"Penanggung".equals(loggedInUser.getRole())) {
+                    setGraphic(null);
+                } else {
+                    UtangWithUserInfo utang = getTableView().getItems().get(getIndex());
+                    payBtn.setDisable(utang.getSisaUtang() <= 0);
+                    setGraphic(pane);
+                }
+            }
+        });
+        return actionCol;
+    }
 
-//         TableColumn<Utang, String> creditorCol = new TableColumn<>("Kreditor"); // Ubah teks
-//         creditorCol.setCellValueFactory(new PropertyValueFactory<>("creditor"));
-//         creditorCol.setPrefWidth(120);
-//         styleTableColumn(creditorCol);
-
-//         TableColumn<Utang, Double> originalCol = new TableColumn<>("Asli"); // Ubah teks
-//         originalCol.setCellValueFactory(new PropertyValueFactory<>("jumlah"));
-//         originalCol.setPrefWidth(100);
-//         styleTableColumn(originalCol);
-        
-//         originalCol.setCellFactory(col -> new TableCell<>() {
-//             @Override
-//             protected void updateItem(Double val, boolean empty) {
-//                 super.updateItem(val, empty);
-//                 if (empty || val == null) {
-//                     setText(null);
-//                     setStyle("");
-//                 } else {
-//                     setText("Rp " + formatRupiah(val));
-//                     setStyle("-fx-text-fill: " + TEXT_GRAY + "; -fx-font-weight: bold;");
-//                 }
-//             }
-//         });
-
-//         // Kolom baru untuk Tingkat Bunga
-//         TableColumn<Utang, Double> interestCol = new TableColumn<>("Bunga"); // Ubah teks
-//         interestCol.setCellValueFactory(new PropertyValueFactory<>("bunga"));
-//         interestCol.setPrefWidth(80);
-//         styleTableColumn(interestCol);
-        
-//         interestCol.setCellFactory(col -> new TableCell<>() {
-//             @Override
-//             protected void updateItem(Double val, boolean empty) {
-//                 super.updateItem(val, empty);
-//                 if (empty || val == null) {
-//                     setText(null);
-//                     setStyle("");
-//                 } else {
-//                     setText(String.format("%.2f%%", val * 100));
-//                     setStyle("-fx-text-fill: " + TEXT_DARK + "; -fx-font-weight: medium;");
-//                 }
-//             }
-//         });
-
-//         // Kolom baru untuk Total dengan Bunga
-//         TableColumn<Utang, Double> totalWithInterestCol = new TableColumn<>("Total + Bunga"); // Ubah teks
-//         totalWithInterestCol.setCellValueFactory(cellData -> {
-//             // Perlu getTotalWithInterest() di model Utang
-//             return new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getTotalWithInterest());
-//         });
-//         totalWithInterestCol.setPrefWidth(120);
-//         styleTableColumn(totalWithInterestCol);
-        
-//         totalWithInterestCol.setCellFactory(col -> new TableCell<>() {
-//             @Override
-//             protected void updateItem(Double val, boolean empty) {
-//                 super.updateItem(val, empty);
-//                 if (empty || val == null) {
-//                     setText(null);
-//                     setStyle("");
-//                 } else {
-//                     setText("Rp " + formatRupiah(val));
-//                     setStyle("-fx-text-fill: " + DARK_GREEN + "; -fx-font-weight: bold;");
-//                 }
-//             }
-//         });
-
-//         TableColumn<Utang, Double> remainingCol = new TableColumn<>("Sisa"); // Ubah teks
-//         remainingCol.setCellValueFactory(new PropertyValueFactory<>("sisaUtang"));
-//         remainingCol.setPrefWidth(100);
-//         styleTableColumn(remainingCol);
-        
-//         remainingCol.setCellFactory(col -> new TableCell<>() {
-//             @Override
-//             protected void updateItem(Double val, boolean empty) {
-//                 super.updateItem(val, empty);
-//                 if (empty || val == null) {
-//                     setText(null);
-//                     setStyle("");
-//                 } else {
-//                     setText("Rp " + formatRupiah(val));
-//                     setStyle("-fx-text-fill: " + RED + "; -fx-font-weight: bold;");
-//                 }
-//             }
-//         });
-
-//         TableColumn<Utang, String> estimatedCol = new TableColumn<>("Est. Bulanan"); // Ubah teks
-//         // Perlu getFormattedEstimasiBulanan() di model Utang
-//         estimatedCol.setCellValueFactory(new PropertyValueFactory<>("formattedEstimasiBulanan"));
-//         estimatedCol.setPrefWidth(100);
-//         styleTableColumn(estimatedCol);
-
-//         TableColumn<Utang, String> dueDateCol = new TableColumn<>("Tanggal Jatuh Tempo"); // Ubah teks
-//         dueDateCol.setCellValueFactory(new PropertyValueFactory<>("formattedDueDate"));
-//         dueDateCol.setPrefWidth(90);
-//         styleTableColumn(dueDateCol);
-
-//         TableColumn<Utang, String> statusCol = new TableColumn<>("Status");
-//         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
-//         statusCol.setPrefWidth(90);
-//         styleTableColumn(statusCol);
-        
-//         statusCol.setCellFactory(col -> new TableCell<>() {
-//             @Override
-//             protected void updateItem(String status, boolean empty) {
-//                 super.updateItem(status, empty);
-//                 if (empty || status == null) {
-//                     setText(null);
-//                     setStyle("");
-//                 } else {
-//                     setText(status);
-//                     if (status.toLowerCase().contains("lunas")) {
-//                         setStyle("-fx-text-fill: " + DARK_GREEN + "; -fx-font-weight: bold;");
-//                     } else {
-//                         setStyle("-fx-text-fill: " + RED + "; -fx-font-weight: bold;");
-//                     }
-//                 }
-//             }
-//         });
-
-//         // Kolom Aksi untuk Tanggungan
-//         TableColumn<Utang, Void> actionCol = new TableColumn<>("Aksi");
-//         actionCol.setPrefWidth(150);
-//         styleTableColumn(actionCol);
-        
-//         actionCol.setCellFactory(col -> new TableCell<>() {
-//             // Tombol Edit dan Lihat untuk utang pribadi Tanggungan
-//             private final Button editBtn = createTableButton("✏️ Edit", LIGHT_GREEN, "#D0E8C5", DARK_GREEN);
-//             private final Button viewBtn = createTableButton("👁️ Lihat", "#E3F2FD", "#BBDEFB", "#1976D2");
-            
-//             {
-//                 editBtn.setOnAction(e -> {
-//                     Utang utang = getTableView().getItems().get(getIndex());
-//                     // Perlu objek Penanggung (untuk constructor AddDebtForm)
-//                     // Karena ini utang Tanggungan, anggap Penanggung-nya adalah loggedInUser.getPenanggungId()
-//                     Penanggung penanggungOfDebt = new Penanggung(
-//                         loggedInUser.getUserId(),
-//                         loggedInUser.getNama(),
-//                         loggedInUser.getUmur(),
-//                         loggedInUser.getEmail(),
-//                         loggedInUser.getPassword(),
-//                         ((Tanggungan)loggedInUser).getPekerjaan() // Gunakan pekerjaan Tanggungan
-//                     );
-
-//                     AddDebtForm editForm = new AddDebtForm(penanggungOfDebt, utang); // Utang untuk diedit
-//                     editForm.display();
-//                     refreshDebtTable();
-//                     updateDebtSummary();
-//                 });
-
-//                 viewBtn.setOnAction(e -> {
-//                     Utang utang = getTableView().getItems().get(getIndex());
-//                     showDebtDetails(utang);
-//                 });
-//             }
-            
-//             @Override
-//             protected void updateItem(Void item, boolean empty) {
-//                 super.updateItem(item, empty);
-//                 if (empty) {
-//                     setGraphic(null);
-//                 } else {
-//                     HBox actionPane = new HBox(8, editBtn, viewBtn);
-//                     setGraphic(actionPane);
-//                 }
-//             }
-//         });
-
-//         table.getColumns().addAll(idCol, creditorCol, originalCol, interestCol, totalWithInterestCol, remainingCol, estimatedCol, dueDateCol, statusCol, actionCol);
-//         return table;
-//     }
-
-//     private void showFamilyDebtDetails(UtangWithUserInfo utang) {
-//         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-//         alert.setTitle("Detail Utang Keluarga"); // Ubah teks
-//         alert.setHeaderText("Informasi Utang untuk " + utang.getUserName()); // Ubah teks
-        
-//         String details = String.format(
-//             "Pemilik Utang: %s\n" + // Ubah teks
-//             "ID Utang: %s\n" + // Ubah teks
-//             "Kreditor: %s\n" + // Ubah teks
-//             "Jumlah Asli: Rp %s\n" + // Ubah teks
-//             "Sisa Jumlah: Rp %s\n" + // Ubah teks
-//             "Tingkat Bunga: %.2f%%\n" + // Ubah teks
-//             "Tanggal Jatuh Tempo: %s\n" + // Ubah teks
-//             "Status: %s\n" +
-//             "Estimasi Pembayaran Bulanan: %s", // Ubah teks
-//             utang.getUserName(),
-//             utang.getUtangId(),
-//             utang.getCreditor(),
-//             formatRupiah(utang.getJumlah()),
-//             formatRupiah(utang.getSisaUtang()),
-//             utang.getBunga() * 100,
-//             utang.getFormattedDueDate(),
-//             utang.getStatus(),
-//             utang.getFormattedEstimasiBulanan()
-//         );
-        
-//         alert.setContentText(details);
-//         alert.getDialogPane().setStyle("-fx-font-family: 'Segoe UI'; -fx-font-size: 14px;");
-//         alert.showAndWait();
-//     }
-
-//     private void showDebtDetails(Utang utang) {
-//         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-//         alert.setTitle("Detail Utang"); // Ubah teks
-//         alert.setHeaderText("Informasi Utang untuk " + utang.getCreditor()); // Ubah teks
-        
-//         String details = String.format(
-//             "ID Utang: %s\n" + // Ubah teks
-//             "Kreditor: %s\n" + // Ubah teks
-//             "Jumlah Asli: Rp %s\n" + // Ubah teks
-//             "Sisa Jumlah: Rp %s\n" + // Ubah teks
-//             "Tingkat Bunga: %.2f%%\n" + // Ubah teks
-//             "Tanggal Jatuh Tempo: %s\n" + // Ubah teks
-//             "Status: %s\n" +
-//             "Estimasi Pembayaran Bulanan: %s", // Ubah teks
-//             utang.getUtangId(),
-//             utang.getCreditor(),
-//             formatRupiah(utang.getJumlah()),
-//             formatRupiah(utang.getSisaUtang()),
-//             utang.getBunga() * 100,
-//             utang.getFormattedDueDate(),
-//             utang.getStatus(),
-//             utang.getFormattedEstimasiBulanan()
-//         );
-        
-//         alert.setContentText(details);
-//         alert.getDialogPane().setStyle("-fx-font-family: 'Segoe UI'; -fx-font-size: 14px;");
-//         alert.showAndWait();
-//     }
-
-//     private void styleTableColumn(TableColumn<?, ?> column) {
-//         column.setStyle("-fx-font-family: 'Segoe UI'; -fx-font-size: 13px; -fx-font-weight: medium;");
-//     }
-
-//     private Button createTableButton(String text, String bgColor, String hoverColor, String textColor) {
-//         Button btn = new Button(text);
-//         btn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 12));
-//         btn.setPadding(new Insets(6, 12, 6, 12));
-//         btn.setTextFill(Color.web(textColor));
-//         btn.setStyle("-fx-background-color: " + bgColor + "; " +
-//                      "-fx-background-radius: 6; " +
-//                      "-fx-cursor: hand; " +
-//                      "-fx-border-color: #E2E8F0; " +
-//                      "-fx-border-width: 1; " +
-//                      "-fx-border-radius: 6;");
-        
-//         btn.setOnMouseEntered(e -> btn.setStyle(btn.getStyle().replace(bgColor, hoverColor)));
-//         btn.setOnMouseExited(e -> btn.setStyle(btn.getStyle().replace(hoverColor, bgColor)));
-        
-//         return btn;
-//     }
-
-//     // Menggunakan @SuppressWarnings("unchecked") untuk menekan warning
-//     @SuppressWarnings("unchecked")
-//     private void refreshDebtTable() {
-//         if (loggedInUser != null) {
-//             if ("Penanggung".equals(loggedInUser.getRole())) {
-//                 List<UtangWithUserInfo> familyDebts = utangDAO.getAllFamilyDebts();
-//                 // Pastikan TableView adalah UtangWithUserInfo
-//                 ((TableView<UtangWithUserInfo>) debtTable).setItems(FXCollections.observableArrayList(familyDebts));
-//             } else {
-//                 List<Utang> personalDebts = utangDAO.getAllUtangForTanggungan(loggedInUser.getUserId());
-//                 // Pastikan TableView adalah Utang
-//                 ((TableView<Utang>) debtTable).setItems(FXCollections.observableArrayList(personalDebts));
-//             }
-//         } else {
-//             // Ini akan menyebabkan error jika debtTable tidak diinisialisasi
-//             // atau jika tipe generiknya tidak cocok dengan FXCollections.emptyObservableList()
-//             if (debtTable != null) {
-//                 debtTable.setItems(FXCollections.emptyObservableList());
-//             }
-//         }
-//     }
-
-//     private void updateDebtSummary() {
-//         double totalAmount = 0;
-//         double thisMonthPayment = 0; // Ini harusnya pembayaran actual, bukan total utang jatuh tempo
-//         int overdueCount = 0;
-//         int activeCount = 0;
-        
-//         LocalDate now = LocalDate.now();
-        
-//         if ("Penanggung".equals(loggedInUser.getRole())) {
-//             List<UtangWithUserInfo> familyDebts = utangDAO.getAllFamilyDebts();
-//             for (UtangWithUserInfo debt : familyDebts) {
-//                 totalAmount += debt.getJumlah(); // Total jumlah utang asli
-
-//                 if (!"Lunas".equalsIgnoreCase(debt.getStatus())) { // Gunakan equalsIgnoreCase
-//                     activeCount++;
-                    
-//                     if (debt.getTanggalJatuhTempo().isBefore(now)) {
-//                         overdueCount++;
-//                     }
-                    
-//                     // Pembayaran bulan ini: asumsi ini adalah pembayaran yang *diharapkan* untuk bulan ini
-//                     // Jika Anda memiliki tabel payment_history, ini harus dihitung dari sana
-//                     // Untuk saat ini, kita bisa gunakan estimasi bulanan jika jatuh tempo bulan ini.
-//                     if (debt.getTanggalJatuhTempo().getMonth() == now.getMonth() &&
-//                         debt.getTanggalJatuhTempo().getYear() == now.getYear()) {
-//                         // Ini akan menambahkan 'jumlah' asli, bukan estimasi bulanan atau pembayaran aktual
-//                         // Perlu disesuaikan jika ada tabel payment_history
-//                         thisMonthPayment += debt.getJumlah();
-//                     }
-//                 }
-//             }
-//         } else {
-//             List<Utang> personalDebts = utangDAO.getAllUtangForTanggungan(loggedInUser.getUserId());
-//             for (Utang debt : personalDebts) {
-//                 totalAmount += debt.getJumlah();
-
-//                 if (!"Lunas".equalsIgnoreCase(debt.getStatus())) {
-//                     activeCount++;
-                    
-//                     if (debt.getTanggalJatuhTempo().isBefore(now)) {
-//                         overdueCount++;
-//                     }
-                    
-//                     if (debt.getTanggalJatuhTempo().getMonth() == now.getMonth() &&
-//                         debt.getTanggalJatuhTempo().getYear() == now.getYear()) {
-//                         thisMonthPayment += debt.getJumlah();
-//                     }
-//                 }
-//             }
-//         }
-        
-//         totalDebtValue.setText("Rp " + formatRupiah(totalAmount));
-//         thisMonthPaymentValue.setText("Rp " + formatRupiah(thisMonthPayment));
-//         overdueDebtValue.setText(String.valueOf(overdueCount));
-//         activeDebtValue.setText(String.valueOf(activeCount));
-        
-//         if (overdueCount > 0) {
-//             overdueDebtValue.setTextFill(Color.web(RED));
-//         } else {
-//             overdueDebtValue.setTextFill(Color.web(DARK_GREEN));
-//         }
-//     }
-
-//     // Metode format Rupiah
-//     private String formatRupiah(double amount) {
-//         NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
-//         // Hapus simbol mata uang dan spasi tambahan jika hanya ingin format angka
-//         String formatted = formatter.format(amount).replace("Rp", "").trim();
-//         return formatted;
-//     }
-
-//     private void showAlert(Alert.AlertType type, String title, String message) {
-//         Alert alert = new Alert(type);
-//         alert.setTitle(title);
-//         alert.setHeaderText(null);
-//         alert.setContentText(message);
-//         alert.showAndWait();
-//     }
-// }
+    // Helper methods
+    private Button createNavLink(String text, String icon) {
+        Button btn = new Button(icon + " " + text);
+        btn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
+        btn.setPadding(new Insets(10, 16, 10, 16));
+        btn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-background-radius: 8;");
+        btn.setOnMouseEntered(e -> btn.setStyle(btn.getStyle() + "-fx-background-color: rgba(255,255,255,0.15);"));
+        btn.setOnMouseExited(e -> btn.setStyle(btn.getStyle().replace("-fx-background-color: rgba(255,255,255,0.15);", "")));
+        return btn;
+    }
+    
+    private VBox createSummaryCard(String title, Label valueLabel, String color) {
+        VBox card = new VBox(10);
+        card.setPadding(new Insets(20));
+        card.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 2);");
+        Label titleLabel = new Label(title);
+        valueLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 26));
+        valueLabel.setTextFill(Color.web(color));
+        card.getChildren().addAll(titleLabel, valueLabel);
+        return card;
+    }
+    
+    private String formatRupiah(double amount) {
+        return NumberFormat.getCurrencyInstance(new Locale("id", "ID")).format(amount);
+    }
+    
+    private TableCell<UtangWithUserInfo, Double> createRupiahCell(boolean isRemaining) {
+        return new TableCell<>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(formatRupiah(item));
+                    if (isRemaining) {
+                        setTextFill(item > 0 ? Color.web(RED) : Color.web(DARK_GREEN));
+                        setStyle("-fx-font-weight: bold;");
+                    }
+                }
+            }
+        };
+    }
+}

@@ -13,6 +13,7 @@ import com.subwayit.dao.TanggunganDAO;
 import com.subwayit.model.Admin;
 import com.subwayit.dao.AdminDAO;
 import com.subwayit.dao.TransaksiDAO; // FIX 1: Add import for TransaksiDAO
+import com.subwayit.dao.UtangDAO;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -48,6 +49,7 @@ public class App extends Application {
     private TanggunganDAO tanggunganDAO;
     private AdminDAO adminDAO;
     private TransaksiDAO transaksiDAO; // FIX 2: Declare TransaksiDAO attribute
+    private UtangDAO utangDAO;
 
     // Primary stage reference
     private Stage primaryStage;
@@ -82,6 +84,7 @@ public class App extends Application {
         this.penanggungDAO = new PenanggungDAO(userDAO);
         this.adminDAO = new AdminDAO();
         this.transaksiDAO = new TransaksiDAO(); // FIX 3: Initialize TransaksiDAO
+        this.utangDAO = new UtangDAO();
 
         // Show the login scene
         Scene loginScene = createLoginScene();
@@ -231,21 +234,21 @@ public class App extends Application {
         // Pastikan logika di dalamnya menggunakan instance DAO yang sudah diinisialisasi.
     }
 
-    private void openDashboard(User user) {
-        // FIX 4: Correctly pass the user object and all initialized DAOs
-        DashboardPage dashboardPage = new DashboardPage(
-            primaryStage, 
-            user, // Pass the logged-in user object
-            userDAO, 
-            penanggungDAO, 
-            tanggunganDAO, 
-            adminDAO, 
-            transaksiDAO
-        );
-        Scene dashboardScene = dashboardPage.createScene();
-        primaryStage.setScene(dashboardScene);
-        primaryStage.centerOnScreen();
-    }
+private void openDashboard(User user) {
+    DashboardPage dashboardPage = new DashboardPage(
+        primaryStage, 
+        user, 
+        userDAO, 
+        penanggungDAO, 
+        tanggunganDAO, 
+        adminDAO, 
+        transaksiDAO, 
+        utangDAO // <- Add the utangDAO instance here
+    );
+    Scene dashboardScene = dashboardPage.createScene();
+    primaryStage.setScene(dashboardScene);
+    primaryStage.centerOnScreen();
+}
 
     private void showModernAlert(Alert.AlertType type, String title, String message) {
         Alert alert = new Alert(type);

@@ -4,7 +4,7 @@ import com.subwayit.dao.*;
 import com.subwayit.model.Penanggung;
 import com.subwayit.model.Transaksi;
 import com.subwayit.model.User;
-// import com.subwayit.gui.DebtPage; // Uncomment if you have a DebtPage
+// import com.subwayit.gui.DebtPage;
 
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
@@ -36,7 +36,7 @@ public class DashboardPage {
     private TanggunganDAO tanggunganDAO;
     private AdminDAO adminDAO;
     private TransaksiDAO transaksiDAO;
-
+    private UtangDAO utangDAO;
     private TableView<Transaksi> transactionTable;
     private Label totalTransactionValue = new Label("0");
     private Label thisMonthSpendingValue = new Label("Rp 0");
@@ -51,17 +51,15 @@ public class DashboardPage {
     private static final String TEXT_GRAY = "#64748B";
     private static final String RED = "#E53E3E";
 
-    // --- FIX 2: Update constructor to accept all DAO dependencies ---
-    public DashboardPage(Stage primaryStage, User user, UserDAO userDAO, PenanggungDAO penanggungDAO, TanggunganDAO tanggunganDAO, AdminDAO adminDAO, TransaksiDAO transaksiDAO) {
+    public DashboardPage(Stage primaryStage, User user, UserDAO userDAO, PenanggungDAO penanggungDAO, TanggunganDAO tanggunganDAO, AdminDAO adminDAO, TransaksiDAO transaksiDAO, UtangDAO utangDAO) {
         this.primaryStage = primaryStage;
         this.loggedInUser = user;
-
-        // Initialize DAOs from the constructor parameters
         this.userDAO = userDAO;
         this.penanggungDAO = penanggungDAO;
         this.tanggunganDAO = tanggunganDAO;
         this.adminDAO = adminDAO;
-        this.transaksiDAO = transaksiDAO; // No longer creates its own instance
+        this.transaksiDAO = transaksiDAO;
+        this.utangDAO = utangDAO; 
     }
 
     public Scene createScene() {
@@ -77,44 +75,42 @@ public class DashboardPage {
         HBox navBar = new HBox(20);
         navBar.setPadding(new Insets(15, 30, 15, 30));
         navBar.setAlignment(Pos.CENTER_LEFT);
-        navBar.setStyle("-fx-background-color: " + PRIMARY_GREEN + "; " +
-                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8, 0, 0, 2);");
+        navBar.setStyle("-fx-background-color: " + PRIMARY_GREEN + ";");
 
         Label logo = new Label("SUBWAYIT");
         logo.setFont(Font.font("Segoe UI", FontWeight.BOLD, 26));
         logo.setTextFill(Color.WHITE);
-        logo.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 1, 0, 0, 1);");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        // Navigation buttons
-        Button homeBtn = createNavLink("Home", "🏠");
-        homeBtn.setOnAction(e -> primaryStage.setScene(createScene()));
-
         Button dashboardsBtn = createNavLink("Dashboard", "📊");
-        dashboardsBtn.setStyle(dashboardsBtn.getStyle() +
-                "-fx-background-color: rgba(255, 255, 255, 0.2); " +
-                "-fx-border-color: rgba(255, 255, 255, 0.4); " +
-                "-fx-border-width: 1px;");
-
+        dashboardsBtn.setStyle(dashboardsBtn.getStyle() + "-fx-background-color: rgba(255,255,255,0.2);");
+        
         Button membersBtn = createNavLink("Members", "👥");
         membersBtn.setOnAction(e -> {
-            // FIX: Tambahkan 'transaksiDAO' saat membuat MembersPage
-            MembersPage mp = new MembersPage(primaryStage, loggedInUser, userDAO, penanggungDAO, tanggunganDAO, adminDAO, transaksiDAO);
+            // Pass ALL DAOs to the next page
+            MembersPage mp = new MembersPage(primaryStage, loggedInUser, userDAO, penanggungDAO, tanggunganDAO, adminDAO, transaksiDAO, utangDAO);
             primaryStage.setScene(mp.createScene());
         });
 
         Button debtBtn = createNavLink("Debt", "💰");
-        // Uncomment and implement if you have a DebtPage
-        /*
+        // --- FIX 2: This navigation now works correctly ---
         debtBtn.setOnAction(e -> {
-            DebtPage debtPage = new DebtPage(primaryStage, loggedInUser, transaksiDAO, ...otherDAOs);
+            DebtPage debtPage = new DebtPage(
+                primaryStage, 
+                loggedInUser, 
+                userDAO, 
+                penanggungDAO, 
+                tanggunganDAO, 
+                adminDAO, 
+                transaksiDAO, 
+                utangDAO
+            );
             primaryStage.setScene(debtPage.createScene());
         });
-        */
 
-        navBar.getChildren().addAll(logo, spacer, homeBtn, dashboardsBtn, membersBtn, debtBtn);
+        navBar.getChildren().addAll(logo, spacer, dashboardsBtn, membersBtn, debtBtn);
         return navBar;
     }
 

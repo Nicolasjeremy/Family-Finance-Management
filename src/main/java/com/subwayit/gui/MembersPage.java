@@ -32,12 +32,12 @@ public class MembersPage {
     private Stage primaryStage;
     private User loggedInUser;
     
-    // --- FIX 1: Declare all necessary DAO attributes, including TransaksiDAO ---
     private UserDAO userDAO;
     private PenanggungDAO penanggungDAO;
     private TanggunganDAO tanggunganDAO;
     private AdminDAO adminDAO;
-    private TransaksiDAO transaksiDAO; // Ditambahkan
+    private TransaksiDAO transaksiDAO;
+    private UtangDAO utangDAO;
 
     private ObservableList<User> familyMembers;
     private GridPane memberCardsGrid;
@@ -49,18 +49,15 @@ public class MembersPage {
     private static final String TEXT_DARK = "#2D3748";
     private static final String TEXT_GRAY = "#64748B";
 
-    // --- FIX 2: Modified constructor to accept TransaksiDAO ---
-    public MembersPage(Stage primaryStage, User user, UserDAO userDAO, PenanggungDAO penanggungDAO, TanggunganDAO tanggunganDAO, AdminDAO adminDAO, TransaksiDAO transaksiDAO) {
+    public MembersPage(Stage primaryStage, User user, UserDAO userDAO, PenanggungDAO penanggungDAO, TanggunganDAO tanggunganDAO, AdminDAO adminDAO, TransaksiDAO transaksiDAO, UtangDAO utangDAO) {
         this.primaryStage = primaryStage;
         this.loggedInUser = user;
-        
-        // Initialize all DAOs from parameters
         this.userDAO = userDAO;
         this.penanggungDAO = penanggungDAO;
         this.tanggunganDAO = tanggunganDAO;
         this.adminDAO = adminDAO;
-        this.transaksiDAO = transaksiDAO; // Disimpan
-        
+        this.transaksiDAO = transaksiDAO;
+        this.utangDAO = utangDAO; // Store the injected DAO
         this.familyMembers = FXCollections.observableArrayList();
     }
 
@@ -82,7 +79,7 @@ public class MembersPage {
         HBox navBar = new HBox(20);
         navBar.setPadding(new Insets(15, 30, 15, 30));
         navBar.setAlignment(Pos.CENTER_LEFT);
-        navBar.setStyle("-fx-background-color: " + PRIMARY_GREEN + "; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8, 0, 0, 2);");
+        navBar.setStyle("-fx-background-color: " + PRIMARY_GREEN + ";");
 
         Label logo = new Label("SUBWAYIT");
         logo.setFont(Font.font("Segoe UI", FontWeight.BOLD, 26));
@@ -91,28 +88,26 @@ public class MembersPage {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        // --- FIX 3: Correctly pass all DAOs back to DashboardPage ---
+        // --- FIX 2: Pass all DAOs back to other pages ---
         Button dashboardsBtn = createModernNavLink("Dashboard", "📊");
         dashboardsBtn.setOnAction(e -> {
-            DashboardPage dp = new DashboardPage(primaryStage, loggedInUser, userDAO, penanggungDAO, tanggunganDAO, adminDAO, transaksiDAO);
+            DashboardPage dp = new DashboardPage(primaryStage, loggedInUser, userDAO, penanggungDAO, tanggunganDAO, adminDAO, transaksiDAO, utangDAO);
             primaryStage.setScene(dp.createScene());
         });
 
         Button membersBtn = createModernNavLink("Members", "👥");
-        membersBtn.setStyle(membersBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.2); -fx-border-color: rgba(255, 255, 255, 0.4); -fx-border-width: 1px;");
+        membersBtn.setStyle(membersBtn.getStyle() + "-fx-background-color: rgba(255,255,255,0.2);");
 
-        // Button debtBtn = createModernNavLink("Debt", "💰");
-        // debtBtn.setOnAction(e -> {
-        //     DebtPage debtPage = new DebtPage(primaryStage, loggedInUser, userDAO, penanggungDAO, tanggunganDAO, adminDAO, transaksiDAO);
-        //     primaryStage.setScene(debtPage.createScene());
-        // });
-
-        navBar.getChildren().addAll(logo, spacer, dashboardsBtn, membersBtn);
+        Button debtBtn = createModernNavLink("Debt", "💰");
+        debtBtn.setOnAction(e -> {
+            DebtPage debtPage = new DebtPage(primaryStage, loggedInUser, userDAO, penanggungDAO, tanggunganDAO, adminDAO, transaksiDAO, utangDAO);
+            primaryStage.setScene(debtPage.createScene());
+        });
+        
+        navBar.getChildren().addAll(logo, spacer, dashboardsBtn, membersBtn, debtBtn);
         return navBar;
     }
     
-    // Sisa dari kode Anda di MembersPage tetap sama dan tidak perlu diubah.
-    // ... (salin sisa metode Anda dari createModernNavLink hingga akhir)
     private Button createModernNavLink(String text, String icon) {
         Button btn = new Button(icon + " " + text);
         btn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
@@ -145,7 +140,6 @@ public class MembersPage {
         VBox titleContainer = new VBox(5);
         Label membersTitle = new Label("Family Financial Members 👨‍👩‍👧‍👦");
         membersTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
-        membersTitle.setTextFill(Color.web(TEXT_DARK));
         
         Label subtitle = new Label("Manage your family's financial overview and member details");
         subtitle.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 16));
@@ -177,19 +171,23 @@ public class MembersPage {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         
-        Button addMemberBtn = new Button("➕ Add Member");
-        addMemberBtn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
-        addMemberBtn.setTextFill(Color.WHITE);
-        addMemberBtn.setStyle("-fx-background-color: " + PRIMARY_GREEN + "; -fx-background-radius: 8; -fx-cursor: hand;");
-        
-        addMemberBtn.setOnAction(e -> {
-            AddMemberForm addMemberForm = new AddMemberForm(loggedInUser, userDAO, penanggungDAO, tanggunganDAO, adminDAO);
-            addMemberForm.display();
-            loadAndDisplayMembers();
-        });
-        
-        sectionHeader.getChildren().addAll(accentBar, sectionTitle, spacer, addMemberBtn);
+        sectionHeader.getChildren().addAll(accentBar, sectionTitle, spacer);
 
+        // --- FIX 1: Only Penanggung can see the "Add Member" button ---
+        if ("Penanggung".equals(loggedInUser.getRole())) {
+            Button addMemberBtn = new Button("➕ Add Member");
+            addMemberBtn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
+            addMemberBtn.setTextFill(Color.WHITE);
+            addMemberBtn.setStyle("-fx-background-color: " + PRIMARY_GREEN + "; -fx-background-radius: 8; -fx-cursor: hand;");
+            
+            addMemberBtn.setOnAction(e -> {
+                AddMemberForm addMemberForm = new AddMemberForm(loggedInUser, userDAO, penanggungDAO, tanggunganDAO, adminDAO);
+                addMemberForm.display();
+                loadAndDisplayMembers();
+            });
+            sectionHeader.getChildren().add(addMemberBtn);
+        }
+        
         memberCardsGrid = new GridPane();
         memberCardsGrid.setHgap(25);
         memberCardsGrid.setVgap(25);
@@ -209,8 +207,14 @@ public class MembersPage {
             Penanggung penanggung = penanggungDAO.getPenanggungById(loggedInUser.getUserId());
             if (penanggung != null) {
                 familyMembers.add(penanggung);
-                List<Tanggungan> dependents = tanggunganDAO.getTanggunanByPenanggungId(loggedInUser.getUserId());
-                familyMembers.addAll(dependents);
+                if (penanggung.getAnggotaTanggunganIds() != null) {
+                    for (String tanggunganId : penanggung.getAnggotaTanggunganIds()) {
+                        Tanggungan tanggungan = tanggunganDAO.getTanggunganById(tanggunganId);
+                        if (tanggungan != null) {
+                            familyMembers.add(tanggungan);
+                        }
+                    }
+                }
             }
         } else if ("Tanggungan".equals(loggedInUser.getRole())) {
             Tanggungan tanggungan = tanggunganDAO.getTanggunganById(loggedInUser.getUserId());
@@ -219,14 +223,17 @@ public class MembersPage {
                 Penanggung headOfFamily = penanggungDAO.getPenanggungById(penanggungId);
                 if (headOfFamily != null) {
                     familyMembers.add(headOfFamily);
+                    if (headOfFamily.getAnggotaTanggunganIds() != null) {
+                         for (String memberId : headOfFamily.getAnggotaTanggunganIds()) {
+                             Tanggungan member = tanggunganDAO.getTanggunganById(memberId);
+                             if(member != null) familyMembers.add(member);
+                         }
+                    }
                 }
-                List<Tanggungan> siblings = tanggunganDAO.getTanggunanByPenanggungId(penanggungId);
-                familyMembers.addAll(siblings);
             } else if (tanggungan != null) {
                 familyMembers.add(tanggungan);
             }
         }
-
         populateGrid();
     }
     
@@ -242,8 +249,8 @@ public class MembersPage {
                 row++;
             }
         }
-
-        if (!"Tanggungan".equals(loggedInUser.getRole())) {
+        // --- FIX 1 (cont.): Only Penanggung can see the "Add Member" card ---
+        if ("Penanggung".equals(loggedInUser.getRole())) {
              VBox addMemberCard = createModernAddMemberCard();
              memberCardsGrid.add(addMemberCard, col, row);
         }
@@ -253,35 +260,60 @@ public class MembersPage {
         VBox card = new VBox(15);
         card.setAlignment(Pos.TOP_CENTER);
         card.setPadding(new Insets(20, 15, 20, 15));
-        card.setPrefSize(220, 280);
+        card.setPrefSize(220, 320); // Increased height to fit the edit button
         card.setStyle("-fx-background-color: white; -fx-background-radius: 16; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0, 0, 4); -fx-border-color: #E2E8F0; -fx-border-width: 1; -fx-border-radius: 16;");
 
+        // Profile Picture
         StackPane profileContainer = new StackPane();
         profileContainer.setPrefSize(80, 80);
         profileContainer.setStyle("-fx-background-color: " + PRIMARY_GREEN + "30; -fx-background-radius: 40; -fx-border-color: " + PRIMARY_GREEN + "; -fx-border-width: 2; -fx-border-radius: 40;");
-        
         Label profileIcon = new Label(member.getNama().substring(0, 1).toUpperCase());
         profileIcon.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
         profileIcon.setTextFill(Color.web(PRIMARY_GREEN));
         profileContainer.getChildren().add(profileIcon);
 
+        // Member Info
         VBox infoContainer = new VBox(8);
         infoContainer.setAlignment(Pos.CENTER);
-        
         Label nameLabel = new Label(member.getNama());
         nameLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
-        
         Label ageLabel = new Label(member.getUmur() + " years old");
         ageLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
         ageLabel.setTextFill(Color.web(TEXT_GRAY));
-
         HBox roleBadge = new HBox(new Label((member.getRole().equals("Penanggung") ? "👨‍💼 " : "👨‍🎓 ") + member.getRole()));
         roleBadge.setAlignment(Pos.CENTER);
         roleBadge.setPadding(new Insets(6, 12, 6, 12));
         roleBadge.setStyle("-fx-background-color: " + LIGHT_GREEN + "; -fx-background-radius: 12;");
-        
         infoContainer.getChildren().addAll(nameLabel, ageLabel, roleBadge);
-        card.getChildren().addAll(profileContainer, infoContainer);
+
+        // --- FIX 2 & 3: Add Edit Button with Role-Based Logic ---
+        Button editBtn = new Button("✏️ Edit Profile");
+        editBtn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 13));
+        editBtn.setStyle("-fx-background-color: #E2E8F0; -fx-background-radius: 8; -fx-cursor: hand;");
+        
+        boolean canEdit = false;
+        if ("Penanggung".equals(loggedInUser.getRole())) {
+            // Penanggung can edit anyone in the family
+            canEdit = true;
+        } else if ("Tanggungan".equals(loggedInUser.getRole())) {
+            // Tanggungan can only edit themselves
+            if (loggedInUser.getUserId().equals(member.getUserId())) {
+                canEdit = true;
+            }
+        }
+        
+        editBtn.setDisable(!canEdit);
+        
+        editBtn.setOnAction(e -> {
+            // Open a new form for editing
+            EditMemberForm editForm = new EditMemberForm(member, userDAO, penanggungDAO, tanggunganDAO);
+            editForm.display();
+            // Refresh the view after the form is closed
+            loadAndDisplayMembers();
+        });
+
+        VBox.setVgrow(infoContainer, Priority.ALWAYS); // Make info container grow
+        card.getChildren().addAll(profileContainer, infoContainer, new Region(), editBtn); // Add button at the bottom
 
         card.setOnMouseEntered(e -> card.setStyle(card.getStyle() + "-fx-border-color: " + PRIMARY_GREEN + "; -fx-scale-x: 1.02; -fx-scale-y: 1.02;"));
         card.setOnMouseExited(e -> card.setStyle(card.getStyle().replace("-fx-border-color: " + PRIMARY_GREEN + ";", "-fx-border-color: #E2E8F0;").replace("-fx-scale-x: 1.02; -fx-scale-y: 1.02;", "")));
@@ -291,7 +323,7 @@ public class MembersPage {
     private VBox createModernAddMemberCard() {
         VBox card = new VBox(15);
         card.setAlignment(Pos.CENTER);
-        card.setPrefSize(220, 280);
+        card.setPrefSize(220, 320); // Match height of member card
         card.setStyle("-fx-background-color: white; -fx-background-radius: 16; -fx-border-color: " + PRIMARY_GREEN + "60; -fx-border-width: 2; -fx-border-radius: 16; -fx-border-style: dashed; -fx-cursor: hand;");
 
         StackPane iconContainer = new StackPane(new Label("➕"));
