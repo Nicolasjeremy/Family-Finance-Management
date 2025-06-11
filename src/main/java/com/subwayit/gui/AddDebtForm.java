@@ -2,7 +2,7 @@ package com.subwayit.gui;
 
 import com.subwayit.dao.UtangDAO;
 import com.subwayit.model.Utang;
-import com.subwayit.model.Tanggungan; // Debt is managed by Tanggungan
+import com.subwayit.model.Tanggungan;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -19,24 +19,25 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.shape.Rectangle;
 
 import java.time.LocalDate;
-import java.util.UUID; // To generate unique IDs
+import java.util.UUID;
 
 public class AddDebtForm {
 
     private Stage dialogStage;
-    private Tanggungan currentTanggungan; // The Tanggungan user managing the debt
+    private Tanggungan currentTanggungan;
     private UtangDAO utangDAO;
-    private Utang editingUtang; // For future edit functionality
+    private Utang editingUtang; // For edit functionality
+    private boolean isEditMode = false;
 
     // Form fields
     private TextField creditorField;
     private TextField amountField;
-    private TextField bungaField; // For interest rate (optional)
+    private TextField bungaField;
     private DatePicker dueDateField;
-    private ComboBox<String> statusComboBox; // Changed to ComboBox for better UX
-    private ComboBox<String> debtTypeComboBox; // New field for debt type
+    private ComboBox<String> statusComboBox;
+    private ComboBox<String> debtTypeComboBox;
 
-    // Theme colors (same as AddTransactionForm)
+    // Theme colors
     private static final String PRIMARY_GREEN = "#86DA71";
     private static final String DARK_GREEN = "#6BB85A";
     private static final String LIGHT_GREEN = "#F0F9ED";
@@ -48,21 +49,23 @@ public class AddDebtForm {
     public AddDebtForm(Tanggungan tanggungan) {
         this.currentTanggungan = tanggungan;
         this.utangDAO = new UtangDAO();
+        this.isEditMode = false;
     }
 
-    /** Constructor for editing debt (future functionality) */
+    /** Constructor for editing debt */
     public AddDebtForm(Tanggungan tanggungan, Utang utang) {
-        this(tanggungan);
+        this.currentTanggungan = tanggungan;
+        this.utangDAO = new UtangDAO();
         this.editingUtang = utang;
+        this.isEditMode = true;
     }
 
     /** Display form (modal) */
     public void display() {
         dialogStage = new Stage();
         dialogStage.initModality(Modality.APPLICATION_MODAL);
-        dialogStage.setTitle(editingUtang == null ? "Add New Debt" : "Edit Debt");
+        dialogStage.setTitle(isEditMode ? "Edit Debt - " + editingUtang.getCreditor() : "Add New Debt");
 
-        // Create modern form scene
         Scene scene = createModernFormScene();
         dialogStage.setScene(scene);
         dialogStage.centerOnScreen();
@@ -70,11 +73,9 @@ public class AddDebtForm {
     }
 
     private Scene createModernFormScene() {
-        // Main container with modern styling
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: linear-gradient(135deg, " + LIGHT_GREEN + " 0%, #ffffff 50%, " + LIGHT_GREEN + " 100%);");
 
-        // Form card container
         VBox formCard = new VBox(25);
         formCard.setAlignment(Pos.TOP_CENTER);
         formCard.setPadding(new Insets(30, 40, 30, 40));
@@ -86,13 +87,8 @@ public class AddDebtForm {
                          "-fx-border-width: 1; " +
                          "-fx-border-radius: 16;");
 
-        // Header section
         VBox headerSection = createHeaderSection();
-        
-        // Form content
         VBox formContent = createFormContent();
-        
-        // Button section
         HBox buttonSection = createButtonSection();
 
         formCard.getChildren().addAll(headerSection, formContent, buttonSection);
@@ -105,21 +101,18 @@ public class AddDebtForm {
         VBox headerSection = new VBox(15);
         headerSection.setAlignment(Pos.CENTER);
 
-        // Title with icon
-        String titleText = editingUtang == null ? "Add New Debt 💳" : "Edit Debt ✏️";
+        String titleText = isEditMode ? "Edit Debt ✏️" : "Add New Debt 💳";
         Label titleLabel = new Label(titleText);
         titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
         titleLabel.setTextFill(Color.web(TEXT_DARK));
 
-        // Subtitle
-        String subtitleText = editingUtang == null ? 
-            "Record a new financial obligation" : 
-            "Update your debt details";
+        String subtitleText = isEditMode ? 
+            "Update your debt details" : 
+            "Record a new financial obligation";
         Label subtitleLabel = new Label(subtitleText);
         subtitleLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 16));
         subtitleLabel.setTextFill(Color.web(TEXT_GRAY));
 
-        // Decorative line
         Rectangle decorativeLine = new Rectangle(60, 3);
         decorativeLine.setFill(Color.web(PRIMARY_GREEN));
         decorativeLine.setArcWidth(3);
@@ -132,29 +125,17 @@ public class AddDebtForm {
     private VBox createFormContent() {
         VBox formContent = new VBox(20);
 
-        // Creditor field
         VBox creditorSection = createFieldSection("🏦 Creditor Name", createModernCreditorField());
-        
-        // Debt type field (new)
         VBox debtTypeSection = createFieldSection("🏷️ Debt Type", createDebtTypeComboBox());
-        
-        // Amount field
         VBox amountSection = createFieldSection("💰 Debt Amount", createModernAmountField());
-        
-        // Interest rate field
         VBox interestSection = createFieldSection("📈 Interest Rate (%)", createModernInterestField());
-        
-        // Due date field
         VBox dueDateSection = createFieldSection("📅 Due Date", createModernDatePicker());
-        
-        // Status field
-        VBox statusSection = createFieldSection("📊 Initial Status", createStatusComboBox());
+        VBox statusSection = createFieldSection("📊 Status", createStatusComboBox());
 
         formContent.getChildren().addAll(creditorSection, debtTypeSection, amountSection, 
                                        interestSection, dueDateSection, statusSection);
 
-        // Pre-fill form if editing
-        if (editingUtang != null) {
+        if (isEditMode && editingUtang != null) {
             prefillForm(editingUtang);
         } else {
             // Default values for new debt
@@ -191,7 +172,6 @@ public class AddDebtForm {
                               "-fx-background-radius: 8; " +
                               "-fx-padding: 12;");
 
-        // Focus styling
         creditorField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 creditorField.setStyle(creditorField.getStyle().replace("#E2E8F0", PRIMARY_GREEN));
@@ -220,7 +200,6 @@ public class AddDebtForm {
                                  "-fx-font-family: 'Segoe UI'; " +
                                  "-fx-font-size: 14px;");
 
-        // Focus styling
         debtTypeComboBox.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 debtTypeComboBox.setStyle(debtTypeComboBox.getStyle().replace("#E2E8F0", PRIMARY_GREEN));
@@ -245,12 +224,10 @@ public class AddDebtForm {
                             "-fx-background-radius: 8; " +
                             "-fx-padding: 12;");
 
-        // Numeric validation
         amountField.setTextFormatter(new TextFormatter<>(c ->
             c.getText().matches("[0-9]*\\.?[0-9]*") ? c : null
         ));
 
-        // Focus styling
         amountField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 amountField.setStyle(amountField.getStyle().replace("#E2E8F0", PRIMARY_GREEN));
@@ -275,12 +252,10 @@ public class AddDebtForm {
                            "-fx-background-radius: 8; " +
                            "-fx-padding: 12;");
 
-        // Numeric validation
         bungaField.setTextFormatter(new TextFormatter<>(c ->
             c.getText().matches("[0-9]*\\.?[0-9]*") ? c : null
         ));
 
-        // Focus styling
         bungaField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 bungaField.setStyle(bungaField.getStyle().replace("#E2E8F0", PRIMARY_GREEN));
@@ -305,7 +280,6 @@ public class AddDebtForm {
                              "-fx-font-family: 'Segoe UI'; " +
                              "-fx-font-size: 14px;");
 
-        // Focus styling
         dueDateField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 dueDateField.setStyle(dueDateField.getStyle().replace("#E2E8F0", PRIMARY_GREEN));
@@ -320,7 +294,7 @@ public class AddDebtForm {
     private ComboBox<String> createStatusComboBox() {
         statusComboBox = new ComboBox<>();
         statusComboBox.getItems().addAll("Belum Lunas", "Sebagian Lunas", "Lunas", "Overdue");
-        statusComboBox.setPromptText("Select initial status");
+        statusComboBox.setPromptText("Select status");
         statusComboBox.setPrefWidth(420);
         statusComboBox.setPrefHeight(45);
         statusComboBox.setStyle("-fx-background-color: white; " +
@@ -331,7 +305,6 @@ public class AddDebtForm {
                                "-fx-font-family: 'Segoe UI'; " +
                                "-fx-font-size: 14px;");
 
-        // Focus styling
         statusComboBox.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 statusComboBox.setStyle(statusComboBox.getStyle().replace("#E2E8F0", PRIMARY_GREEN));
@@ -347,10 +320,9 @@ public class AddDebtForm {
         HBox buttonSection = new HBox(15);
         buttonSection.setAlignment(Pos.CENTER);
 
-        // Cancel button
         Button cancelBtn = new Button("❌ Cancel");
         cancelBtn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
-        cancelBtn.setPrefWidth(150);
+        cancelBtn.setPrefWidth(120);
         cancelBtn.setPrefHeight(45);
         cancelBtn.setTextFill(Color.web(TEXT_DARK));
         cancelBtn.setStyle("-fx-background-color: white; " +
@@ -360,7 +332,6 @@ public class AddDebtForm {
                           "-fx-border-radius: 8; " +
                           "-fx-cursor: hand;");
 
-        // Cancel button hover
         cancelBtn.setOnMouseEntered(e -> cancelBtn.setStyle(cancelBtn.getStyle() + 
             "-fx-border-color: " + RED + "; -fx-text-fill: " + RED + ";"));
         cancelBtn.setOnMouseExited(e -> cancelBtn.setStyle(cancelBtn.getStyle()
@@ -368,8 +339,7 @@ public class AddDebtForm {
             .replace("-fx-text-fill: " + RED + ";", "-fx-text-fill: " + TEXT_DARK + ";")));
         cancelBtn.setOnAction(e -> dialogStage.close());
 
-        // Submit button
-        String submitText = editingUtang == null ? "💳 Add Debt" : "💾 Update Debt";
+        String submitText = isEditMode ? "💾 Update Debt" : "💳 Add Debt";
         Button submitBtn = new Button(submitText);
         submitBtn.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
         submitBtn.setPrefWidth(150);
@@ -380,27 +350,43 @@ public class AddDebtForm {
                           "-fx-cursor: hand; " +
                           "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0, 0, 3);");
 
-        // Submit button hover
         submitBtn.setOnMouseEntered(e -> submitBtn.setStyle(submitBtn.getStyle().replace(PRIMARY_GREEN, DARK_GREEN)));
         submitBtn.setOnMouseExited(e -> submitBtn.setStyle(submitBtn.getStyle().replace(DARK_GREEN, PRIMARY_GREEN)));
         submitBtn.setOnAction(e -> handleSubmit());
 
-        buttonSection.getChildren().addAll(cancelBtn, submitBtn);
+        // Add delete button for edit mode
+        if (isEditMode) {
+            Button deleteBtn = new Button("🗑️ Delete");
+            deleteBtn.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
+            deleteBtn.setPrefWidth(120);
+            deleteBtn.setPrefHeight(45);
+            deleteBtn.setTextFill(Color.WHITE);
+            deleteBtn.setStyle("-fx-background-color: " + RED + "; " +
+                              "-fx-background-radius: 8; " +
+                              "-fx-cursor: hand; " +
+                              "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0, 0, 3);");
+
+            deleteBtn.setOnMouseEntered(e -> deleteBtn.setStyle(deleteBtn.getStyle().replace(RED, "#C53030")));
+            deleteBtn.setOnMouseExited(e -> deleteBtn.setStyle(deleteBtn.getStyle().replace("#C53030", RED)));
+            deleteBtn.setOnAction(e -> handleDelete());
+
+            buttonSection.getChildren().addAll(deleteBtn, cancelBtn, submitBtn);
+        } else {
+            buttonSection.getChildren().addAll(cancelBtn, submitBtn);
+        }
+
         return buttonSection;
     }
 
-    /** Pre-fill all fields from the Utang object being edited */
     private void prefillForm(Utang utang) {
         creditorField.setText(utang.getCreditor());
         amountField.setText(String.valueOf(utang.getJumlah()));
-        bungaField.setText(String.valueOf(utang.getBunga()));
+        bungaField.setText(String.valueOf(utang.getBunga() * 100)); // Convert to percentage
         dueDateField.setValue(utang.getTanggalJatuhTempo());
         statusComboBox.setValue(utang.getStatus());
-        // debtTypeComboBox would need to be derived from existing data or set to default
-        debtTypeComboBox.setValue("Personal Loan");
+        debtTypeComboBox.setValue("Personal Loan"); // Default, as we don't store debt type
     }
 
-    /** Save new data or update if editing */
     private void handleSubmit() {
         String creditor = creditorField.getText().trim();
         String amountText = amountField.getText().trim();
@@ -433,13 +419,39 @@ public class AddDebtForm {
             return;
         }
 
-        if (editingUtang == null) {
+        double bungaDecimal = bunga / 100.0; // Convert percentage to decimal
+
+        if (isEditMode) {
+            // UPDATE mode
+            editingUtang.setCreditor(creditor);
+            editingUtang.setJumlah(amount);
+            editingUtang.setBunga(bungaDecimal);
+            editingUtang.setTanggalJatuhTempo(dueDate);
+            editingUtang.setStatus(status);
+            
+            // Update sisa_utang proportionally if original amount changed
+            double originalAmount = editingUtang.getJumlah();
+            if (originalAmount != amount && editingUtang.getSisaUtang() > 0) {
+                double ratio = editingUtang.getSisaUtang() / originalAmount;
+                editingUtang.setSisaUtang(amount * ratio);
+            }
+            
+            try {
+                boolean success = utangDAO.updateUtang(editingUtang);
+                if (success) {
+                    showModernAlert(Alert.AlertType.INFORMATION, "Success", "💾 Debt updated successfully!");
+                    dialogStage.close();
+                } else {
+                    showModernAlert(Alert.AlertType.ERROR, "Update Failed", "Failed to update debt. Please try again.");
+                }
+            } catch (Exception e) {
+                showModernAlert(Alert.AlertType.ERROR, "Database Error", "Failed to update debt: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
             // ADD mode
             String utangId = UUID.randomUUID().toString();
             String userId = currentTanggungan.getUserId();
-
-            // Convert percentage to decimal for storage
-            double bungaDecimal = bunga / 100.0;
 
             Utang newUtang = new Utang(utangId, userId, amount, bungaDecimal, dueDate, status, creditor);
 
@@ -451,21 +463,29 @@ public class AddDebtForm {
                 showModernAlert(Alert.AlertType.ERROR, "Database Error", "Failed to add debt: " + e.getMessage());
                 e.printStackTrace();
             }
-        } else {
-            // EDIT mode: modify fields and save
-            editingUtang.setCreditor(creditor);
-            editingUtang.setJumlah(amount);
-            editingUtang.setBunga(bunga / 100.0); // Convert to decimal
-            editingUtang.setTanggalJatuhTempo(dueDate);
-            editingUtang.setStatus(status);
-            
+        }
+    }
+
+    private void handleDelete() {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Confirm Deletion");
+        confirmAlert.setHeaderText("Delete Debt");
+        confirmAlert.setContentText("Are you sure you want to delete this debt from " + 
+                                   editingUtang.getCreditor() + "?\n\nThis action cannot be undone.");
+        
+        confirmAlert.getDialogPane().setStyle("-fx-font-family: 'Segoe UI'; -fx-font-size: 14px;");
+
+        if (confirmAlert.showAndWait().get() == ButtonType.OK) {
             try {
-                // Assuming you have updateUtang method in UtangDAO
-                // utangDAO.updateUtang(editingUtang);
-                showModernAlert(Alert.AlertType.INFORMATION, "Success", "💾 Debt updated successfully!");
-                dialogStage.close();
+                boolean success = utangDAO.deleteUtang(editingUtang.getUtangId(), currentTanggungan.getUserId());
+                if (success) {
+                    showModernAlert(Alert.AlertType.INFORMATION, "Success", "🗑️ Debt deleted successfully!");
+                    dialogStage.close();
+                } else {
+                    showModernAlert(Alert.AlertType.ERROR, "Deletion Failed", "Failed to delete debt. Please try again.");
+                }
             } catch (Exception e) {
-                showModernAlert(Alert.AlertType.ERROR, "Database Error", "Failed to update debt: " + e.getMessage());
+                showModernAlert(Alert.AlertType.ERROR, "Database Error", "Failed to delete debt: " + e.getMessage());
                 e.printStackTrace();
             }
         }
@@ -476,10 +496,7 @@ public class AddDebtForm {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(msg);
-        
-        // Style the alert dialog
         alert.getDialogPane().setStyle("-fx-font-family: 'Segoe UI'; -fx-font-size: 14px;");
-        
         alert.showAndWait();
     }
 }

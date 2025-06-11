@@ -353,25 +353,25 @@ public class DebtPage {
         // Debt Owner Column (new for family view)
         TableColumn<UtangWithUserInfo, String> ownerCol = new TableColumn<>("Debt Owner");
         ownerCol.setCellValueFactory(new PropertyValueFactory<>("userName"));
-        ownerCol.setPrefWidth(120);
+        ownerCol.setPrefWidth(110);
         styleTableColumn(ownerCol);
 
         TableColumn<UtangWithUserInfo, String> idCol = new TableColumn<>("Debt ID");
         idCol.setCellValueFactory(new PropertyValueFactory<>("utangId"));
-        idCol.setPrefWidth(80);
+        idCol.setPrefWidth(70);
         styleTableColumn(idCol);
 
         TableColumn<UtangWithUserInfo, String> creditorCol = new TableColumn<>("Creditor");
         creditorCol.setCellValueFactory(new PropertyValueFactory<>("creditor"));
-        creditorCol.setPrefWidth(120);
+        creditorCol.setPrefWidth(100);
         styleTableColumn(creditorCol);
 
-        TableColumn<UtangWithUserInfo, Double> amountCol = new TableColumn<>("Original");
-        amountCol.setCellValueFactory(new PropertyValueFactory<>("jumlah"));
-        amountCol.setPrefWidth(100);
-        styleTableColumn(amountCol);
+        TableColumn<UtangWithUserInfo, Double> originalCol = new TableColumn<>("Original");
+        originalCol.setCellValueFactory(new PropertyValueFactory<>("jumlah"));
+        originalCol.setPrefWidth(90);
+        styleTableColumn(originalCol);
         
-        amountCol.setCellFactory(col -> new TableCell<>() {
+        originalCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(Double val, boolean empty) {
                 super.updateItem(val, empty);
@@ -381,6 +381,48 @@ public class DebtPage {
                 } else {
                     setText("Rp " + formatRupiah(val));
                     setStyle("-fx-text-fill: " + TEXT_GRAY + "; -fx-font-weight: bold;");
+                }
+            }
+        });
+
+        // New column for Interest Rate
+        TableColumn<UtangWithUserInfo, Double> interestCol = new TableColumn<>("Interest");
+        interestCol.setCellValueFactory(new PropertyValueFactory<>("bunga"));
+        interestCol.setPrefWidth(80);
+        styleTableColumn(interestCol);
+        
+        interestCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double val, boolean empty) {
+                super.updateItem(val, empty);
+                if (empty || val == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(String.format("%.2f%%", val * 100));
+                    setStyle("-fx-text-fill: " + TEXT_DARK + "; -fx-font-weight: medium;");
+                }
+            }
+        });
+
+        // New column for Total with Interest
+        TableColumn<UtangWithUserInfo, Double> totalWithInterestCol = new TableColumn<>("Total + Interest");
+        totalWithInterestCol.setCellValueFactory(cellData -> {
+            return new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getTotalWithInterest());
+        });
+        totalWithInterestCol.setPrefWidth(110);
+        styleTableColumn(totalWithInterestCol);
+        
+        totalWithInterestCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double val, boolean empty) {
+                super.updateItem(val, empty);
+                if (empty || val == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText("Rp " + formatRupiah(val));
+                    setStyle("-fx-text-fill: " + DARK_GREEN + "; -fx-font-weight: bold;");
                 }
             }
         });
@@ -411,12 +453,12 @@ public class DebtPage {
 
         TableColumn<UtangWithUserInfo, String> dueDateCol = new TableColumn<>("Due Date");
         dueDateCol.setCellValueFactory(new PropertyValueFactory<>("formattedDueDate"));
-        dueDateCol.setPrefWidth(90);
+        dueDateCol.setPrefWidth(80);
         styleTableColumn(dueDateCol);
 
         TableColumn<UtangWithUserInfo, String> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
-        statusCol.setPrefWidth(90);
+        statusCol.setPrefWidth(80);
         styleTableColumn(statusCol);
         
         statusCol.setCellFactory(col -> new TableCell<>() {
@@ -439,7 +481,7 @@ public class DebtPage {
 
         // Actions column for Penanggung
         TableColumn<UtangWithUserInfo, Void> actionCol = new TableColumn<>("Actions");
-        actionCol.setPrefWidth(150);
+        actionCol.setPrefWidth(140);
         styleTableColumn(actionCol);
         
         actionCol.setCellFactory(col -> new TableCell<>() {
@@ -499,7 +541,7 @@ public class DebtPage {
             }
         });
 
-        table.getColumns().addAll(ownerCol, idCol, creditorCol, amountCol, remainingCol, estimatedCol, dueDateCol, statusCol, actionCol);
+        table.getColumns().addAll(ownerCol, idCol, creditorCol, originalCol, interestCol, totalWithInterestCol, remainingCol, estimatedCol, dueDateCol, statusCol, actionCol);
         return table;
     }
 
@@ -517,20 +559,20 @@ public class DebtPage {
 
         TableColumn<Utang, String> idCol = new TableColumn<>("Debt ID");
         idCol.setCellValueFactory(new PropertyValueFactory<>("utangId"));
-        idCol.setPrefWidth(100);
+        idCol.setPrefWidth(80);
         styleTableColumn(idCol);
 
         TableColumn<Utang, String> creditorCol = new TableColumn<>("Creditor");
         creditorCol.setCellValueFactory(new PropertyValueFactory<>("creditor"));
-        creditorCol.setPrefWidth(140);
+        creditorCol.setPrefWidth(120);
         styleTableColumn(creditorCol);
 
-        TableColumn<Utang, Double> amountCol = new TableColumn<>("Original");
-        amountCol.setCellValueFactory(new PropertyValueFactory<>("jumlah"));
-        amountCol.setPrefWidth(120);
-        styleTableColumn(amountCol);
+        TableColumn<Utang, Double> originalCol = new TableColumn<>("Original");
+        originalCol.setCellValueFactory(new PropertyValueFactory<>("jumlah"));
+        originalCol.setPrefWidth(100);
+        styleTableColumn(originalCol);
         
-        amountCol.setCellFactory(col -> new TableCell<>() {
+        originalCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(Double val, boolean empty) {
                 super.updateItem(val, empty);
@@ -544,9 +586,51 @@ public class DebtPage {
             }
         });
 
+        // New column for Interest Rate
+        TableColumn<Utang, Double> interestCol = new TableColumn<>("Interest");
+        interestCol.setCellValueFactory(new PropertyValueFactory<>("bunga"));
+        interestCol.setPrefWidth(80);
+        styleTableColumn(interestCol);
+        
+        interestCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double val, boolean empty) {
+                super.updateItem(val, empty);
+                if (empty || val == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(String.format("%.2f%%", val * 100));
+                    setStyle("-fx-text-fill: " + TEXT_DARK + "; -fx-font-weight: medium;");
+                }
+            }
+        });
+
+        // New column for Total with Interest
+        TableColumn<Utang, Double> totalWithInterestCol = new TableColumn<>("Total + Interest");
+        totalWithInterestCol.setCellValueFactory(cellData -> {
+            return new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getTotalWithInterest());
+        });
+        totalWithInterestCol.setPrefWidth(120);
+        styleTableColumn(totalWithInterestCol);
+        
+        totalWithInterestCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double val, boolean empty) {
+                super.updateItem(val, empty);
+                if (empty || val == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText("Rp " + formatRupiah(val));
+                    setStyle("-fx-text-fill: " + DARK_GREEN + "; -fx-font-weight: bold;");
+                }
+            }
+        });
+
         TableColumn<Utang, Double> remainingCol = new TableColumn<>("Remaining");
         remainingCol.setCellValueFactory(new PropertyValueFactory<>("sisaUtang"));
-        remainingCol.setPrefWidth(120);
+        remainingCol.setPrefWidth(100);
         styleTableColumn(remainingCol);
         
         remainingCol.setCellFactory(col -> new TableCell<>() {
@@ -565,17 +649,17 @@ public class DebtPage {
 
         TableColumn<Utang, String> estimatedCol = new TableColumn<>("Est. Monthly");
         estimatedCol.setCellValueFactory(new PropertyValueFactory<>("formattedEstimasiBulanan"));
-        estimatedCol.setPrefWidth(120);
+        estimatedCol.setPrefWidth(100);
         styleTableColumn(estimatedCol);
 
         TableColumn<Utang, String> dueDateCol = new TableColumn<>("Due Date");
         dueDateCol.setCellValueFactory(new PropertyValueFactory<>("formattedDueDate"));
-        dueDateCol.setPrefWidth(100);
+        dueDateCol.setPrefWidth(90);
         styleTableColumn(dueDateCol);
 
         TableColumn<Utang, String> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
-        statusCol.setPrefWidth(100);
+        statusCol.setPrefWidth(90);
         styleTableColumn(statusCol);
         
         statusCol.setCellFactory(col -> new TableCell<>() {
@@ -596,19 +680,36 @@ public class DebtPage {
             }
         });
 
-        // Actions column for Tanggungan
+        // Actions column for Tanggungan - Updated to include functional edit
         TableColumn<Utang, Void> actionCol = new TableColumn<>("Actions");
-        actionCol.setPrefWidth(180);
+        actionCol.setPrefWidth(150);
         styleTableColumn(actionCol);
         
         actionCol.setCellFactory(col -> new TableCell<>() {
-            private final Button editBtn = createTableButton("✏️ Edit", "#EEEEEE", "#DDDDDD", TEXT_DARK);
+            private final Button editBtn = createTableButton("✏️ Edit", LIGHT_GREEN, "#D0E8C5", DARK_GREEN);
             private final Button viewBtn = createTableButton("👁️ View", "#E3F2FD", "#BBDEFB", "#1976D2");
             
             {
                 editBtn.setOnAction(e -> {
                     Utang utang = getTableView().getItems().get(getIndex());
-                    showAlert(Alert.AlertType.INFORMATION, "Edit Debt", "Edit functionality will be implemented soon.");
+                    
+                    // Create Tanggungan object for the edit form
+                    Tanggungan tempTanggungan = new Tanggungan(
+                        loggedInUser.getUserId(), 
+                        loggedInUser.getNama(), 
+                        loggedInUser.getUmur(), 
+                        loggedInUser.getEmail(), 
+                        loggedInUser.getPassword(), 
+                        "Anak", "SMA", "Pelajar"
+                    );
+                    
+                    // Open edit form
+                    AddDebtForm editForm = new AddDebtForm(tempTanggungan, utang);
+                    editForm.display();
+                    
+                    // Refresh table after editing
+                    refreshDebtTable();
+                    updateDebtSummary();
                 });
 
                 viewBtn.setOnAction(e -> {
@@ -629,7 +730,7 @@ public class DebtPage {
             }
         });
 
-        table.getColumns().addAll(idCol, creditorCol, amountCol, remainingCol, estimatedCol, dueDateCol, statusCol, actionCol);
+        table.getColumns().addAll(idCol, creditorCol, originalCol, interestCol, totalWithInterestCol, remainingCol, estimatedCol, dueDateCol, statusCol, actionCol);
         return table;
     }
 

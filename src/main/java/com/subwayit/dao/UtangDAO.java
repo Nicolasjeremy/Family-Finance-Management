@@ -29,7 +29,7 @@ public class UtangDAO {
             pstmt.setDate(5, Date.valueOf(utang.getTanggalJatuhTempo()));
             pstmt.setString(6, utang.getStatus());
             pstmt.setString(7, utang.getCreditor());
-            pstmt.setDouble(8, utang.getSisaUtang());
+            pstmt.setDouble(8, utang.getTotalWithInterest()); // Store total with interest as initial sisa_utang
             pstmt.executeUpdate();
             System.out.println("Debt added successfully for creditor: " + utang.getCreditor());
         } catch (SQLException e) {
@@ -172,6 +172,60 @@ public class UtangDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * Update existing debt record (for Tanggungan to edit their own debt)
+     * @param utang The Utang object with updated information
+     * @return true if update successful, false otherwise
+     */
+    public boolean updateUtang(Utang utang) {
+        String sql = "UPDATE Utang SET jumlah = ?, bunga = ?, tanggal_jatuh_tempo = ?, status = ?, creditor = ?, sisa_utang = ? WHERE utang_id = ?";
+        try (Connection conn = DatabaseManager.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setDouble(1, utang.getJumlah());
+            pstmt.setDouble(2, utang.getBunga());
+            pstmt.setDate(3, Date.valueOf(utang.getTanggalJatuhTempo()));
+            pstmt.setString(4, utang.getStatus());
+            pstmt.setString(5, utang.getCreditor());
+            pstmt.setDouble(6, utang.getSisaUtang());
+            pstmt.setString(7, utang.getUtangId());
+            
+            int rowsUpdated = pstmt.executeUpdate();
+            if (rowsUpdated > 0) {
+                System.out.println("Debt updated successfully for ID: " + utang.getUtangId());
+                return true;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error updating debt: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Delete debt record (for Tanggungan to remove their debt)
+     * @param utangId The debt ID to delete
+     * @param userId The user ID (for security check)
+     * @return true if deletion successful, false otherwise
+     */
+    public boolean deleteUtang(String utangId, String userId) {
+        String sql = "DELETE FROM Utang WHERE utang_id = ? AND user_id = ?";
+        try (Connection conn = DatabaseManager.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, utangId);
+            pstmt.setString(2, userId);
+            
+            int rowsDeleted = pstmt.executeUpdate();
+            if (rowsDeleted > 0) {
+                System.out.println("Debt deleted successfully for ID: " + utangId);
+                return true;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error deleting debt: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
     }
 
     /**

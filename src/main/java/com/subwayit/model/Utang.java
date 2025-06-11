@@ -12,7 +12,7 @@ public class Utang {
     private LocalDate tanggalJatuhTempo;
     private String status;
     private String creditor;
-    private double sisaUtang; // Sisa utang yang belum dibayar
+    private double sisaUtang; // Sisa utang yang belum dibayar (dari total dengan bunga)
 
     public Utang(String utangId, String userId, double jumlah, double bunga, LocalDate tanggalJatuhTempo, String status, String creditor) {
         this.utangId = utangId;
@@ -22,7 +22,7 @@ public class Utang {
         this.tanggalJatuhTempo = tanggalJatuhTempo;
         this.status = status;
         this.creditor = creditor;
-        this.sisaUtang = jumlah; // Initially, sisa utang sama dengan jumlah utang
+        this.sisaUtang = getTotalWithInterest(); // Initially, sisa utang sama dengan total plus bunga
     }
 
     // Constructor dengan sisaUtang (untuk data dari database)
@@ -45,10 +45,22 @@ public class Utang {
     public void setUserId(String userId) { this.userId = userId; } // Ubah nama method
 
     public double getJumlah() { return jumlah; }
-    public void setJumlah(double jumlah) { this.jumlah = jumlah; }
+    public void setJumlah(double jumlah) { 
+        this.jumlah = jumlah;
+        // Recalculate sisa utang if needed
+        if (this.sisaUtang == 0) {
+            this.sisaUtang = getTotalWithInterest();
+        }
+    }
 
     public double getBunga() { return bunga; }
-    public void setBunga(double bunga) { this.bunga = bunga; }
+    public void setBunga(double bunga) { 
+        this.bunga = bunga;
+        // Recalculate sisa utang if needed
+        if (this.sisaUtang == 0) {
+            this.sisaUtang = getTotalWithInterest();
+        }
+    }
 
     public LocalDate getTanggalJatuhTempo() { return tanggalJatuhTempo; }
     public void setTanggalJatuhTempo(LocalDate tanggalJatuhTempo) { this.tanggalJatuhTempo = tanggalJatuhTempo; }
@@ -63,11 +75,62 @@ public class Utang {
     public void setSisaUtang(double sisaUtang) { 
         this.sisaUtang = sisaUtang;
         // Update status berdasarkan sisa utang
+        double totalWithInterest = getTotalWithInterest();
         if (sisaUtang <= 0) {
             this.status = "Lunas";
-        } else if (sisaUtang < jumlah) {
+        } else if (sisaUtang < totalWithInterest) {
             this.status = "Sebagian Lunas";
         }
+    }
+
+    /**
+     * Menghitung total utang dengan bunga
+     * @return total amount including interest
+     */
+    public double getTotalWithInterest() {
+        if (bunga <= 0) {
+            return jumlah; // No interest
+        }
+        
+        // Calculate compound interest based on time period
+        LocalDate now = LocalDate.now();
+        LocalDate startDate = now; // Assume debt started now for simplicity
+        
+        if (tanggalJatuhTempo != null && tanggalJatuhTempo.isAfter(now)) {
+            // Calculate months between now and due date
+            long monthsToMaturity = ChronoUnit.MONTHS.between(now, tanggalJatuhTempo);
+            if (monthsToMaturity <= 0) {
+                monthsToMaturity = 1; // Minimum 1 month
+            }
+            
+            // Calculate compound interest
+            double monthlyRate = bunga / 12; // Convert annual rate to monthly
+            return jumlah * Math.pow(1 + monthlyRate, monthsToMaturity);
+        } else {
+            // If overdue or no due date, calculate for 1 year
+            return jumlah * (1 + bunga);
+        }
+    }
+
+    /**
+     * Get formatted total with interest for display
+     */
+    public String getFormattedTotalWithInterest() {
+        return "Rp " + String.format("%,.0f", getTotalWithInterest()).replace(',', '.');
+    }
+
+    /**
+     * Get total interest amount
+     */
+    public double getTotalInterest() {
+        return getTotalWithInterest() - jumlah;
+    }
+
+    /**
+     * Get formatted total interest for display
+     */
+    public String getFormattedTotalInterest() {
+        return "Rp " + String.format("%,.0f", getTotalInterest()).replace(',', '.');
     }
 
     public String getFormattedDueDate() {
@@ -96,14 +159,8 @@ public class Utang {
             monthsRemaining = 1; // Minimum 1 bulan
         }
 
-        // Hitung dengan bunga compound jika ada
-        if (bunga > 0) {
-            double monthlyRate = bunga / 12; // Konversi annual rate ke monthly
-            double totalWithInterest = sisaUtang * Math.pow(1 + monthlyRate, monthsRemaining);
-            return totalWithInterest / monthsRemaining;
-        } else {
-            return sisaUtang / monthsRemaining;
-        }
+        // Simple division of remaining debt
+        return sisaUtang / monthsRemaining;
     }
 
     /**
@@ -112,5 +169,26 @@ public class Utang {
     public String getFormattedEstimasiBulanan() {
         double estimasi = getEstimasiBiayaBulanan();
         return "Rp " + String.format("%,.0f", estimasi).replace(',', '.');
+    }
+
+    /**
+     * Get formatted original amount for display
+     */
+    public String getFormattedJumlah() {
+        return "Rp " + String.format("%,.0f", jumlah).replace(',', '.');
+    }
+
+    /**
+     * Get formatted remaining amount for display
+     */
+    public String getFormattedSisaUtang() {
+        return "Rp " + String.format("%,.0f", sisaUtang).replace(',', '.');
+    }
+
+    /**
+     * Get interest rate as percentage for display
+     */
+    public String getFormattedBunga() {
+        return String.format("%.2f%%", bunga * 100);
     }
 }
