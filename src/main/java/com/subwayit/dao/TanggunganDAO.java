@@ -22,6 +22,7 @@ public class TanggunganDAO {
 
     /**
      * Inserts a new Tanggungan into the Pengguna and Tanggungan tables.
+     * 
      * @param tanggungan The Tanggungan object to insert.
      */
     public void addTanggungan(Tanggungan tanggungan, String penanggungId) { // Ubah parameter keluargaId ke penanggungId
@@ -31,7 +32,7 @@ public class TanggunganDAO {
             // Tambahkan kolom penanggung_id ke SQL INSERT
             String sql = "INSERT INTO Tanggungan(tanggungan_id, posisi, nama, umur, pendidikan, pekerjaan, penanggung_id) VALUES(?,?,?,?,?,?,?)";
             try (Connection conn = DatabaseManager.connect();
-                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, tanggungan.getUserId());
                 pstmt.setString(2, tanggungan.getPosisiKeluarga());
                 pstmt.setString(3, tanggungan.getNama());
@@ -57,6 +58,7 @@ public class TanggunganDAO {
 
     /**
      * Retrieves a Tanggungan from the database by their ID.
+     * 
      * @param tanggunganId The ID of the Tanggungan to retrieve.
      * @return The Tanggungan object if found, null otherwise.
      */
@@ -70,7 +72,7 @@ public class TanggunganDAO {
         String sql = "SELECT posisi, nama, umur, pendidikan, pekerjaan, penanggung_id FROM Tanggungan WHERE tanggungan_id = ?";
         Tanggungan tanggungan = null;
         try (Connection conn = DatabaseManager.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, tanggunganId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
@@ -96,7 +98,9 @@ public class TanggunganDAO {
     }
 
     /**
-     * Updates an existing Tanggungan's information in both Pengguna and Tanggungan tables.
+     * Updates an existing Tanggungan's information in both Pengguna and Tanggungan
+     * tables.
+     * 
      * @param tanggungan The Tanggungan object with updated information.
      */
     public void updateTanggungan(Tanggungan tanggungan) {
@@ -106,7 +110,7 @@ public class TanggunganDAO {
             // Update juga kolom penanggung_id
             String sql = "UPDATE Tanggungan SET posisi = ?, nama = ?, umur = ?, pendidikan = ?, pekerjaan = ?, penanggung_id = ? WHERE tanggungan_id = ?";
             try (Connection conn = DatabaseManager.connect();
-                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, tanggungan.getPosisiKeluarga());
                 pstmt.setString(2, tanggungan.getNama());
                 pstmt.setInt(3, tanggungan.getUmur());
@@ -118,7 +122,8 @@ public class TanggunganDAO {
                 if (affectedRows > 0) {
                     System.out.println("Tanggungan berhasil diupdate di tabel Tanggungan: " + tanggungan.getNama());
                 } else {
-                    System.out.println("Tanggungan tidak ditemukan untuk update di tabel Tanggungan: " + tanggungan.getNama());
+                    System.out.println(
+                            "Tanggungan tidak ditemukan untuk update di tabel Tanggungan: " + tanggungan.getNama());
                 }
             }
         } catch (SQLException e) {
@@ -133,6 +138,7 @@ public class TanggunganDAO {
 
     /**
      * Deletes a Tanggungan from both Tanggungan and Pengguna tables.
+     * 
      * @param tanggunganId The ID of the Tanggungan to delete.
      */
     public void deleteTanggungan(String tanggunganId) {
@@ -142,14 +148,15 @@ public class TanggunganDAO {
 
             String sql = "DELETE FROM Tanggungan WHERE tanggungan_id = ?";
             try (Connection conn = DatabaseManager.connect();
-                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, tanggunganId);
                 int affectedRows = pstmt.executeUpdate();
                 if (affectedRows > 0) {
                     System.out.println("Tanggungan berhasil dihapus dari tabel Tanggungan: " + tanggunganId);
                     userDAO.deleteUser(tanggunganId);
                 } else {
-                    System.out.println("Tanggungan tidak ditemukan untuk penghapusan di tabel Tanggungan: " + tanggunganId);
+                    System.out.println(
+                            "Tanggungan tidak ditemukan untuk penghapusan di tabel Tanggungan: " + tanggunganId);
                 }
             }
         } catch (SQLException e) {
@@ -162,28 +169,30 @@ public class TanggunganDAO {
         }
     }
 
-    public List<Tanggungan> getAllTanggunan() {
+    /**
+     * Retrieves all Tanggungan from the database.
+     * 
+     * @return A list of all Tanggungan objects.
+     */
+    public List<Tanggungan> getAllTanggungan() {
         String sql = "SELECT tanggungan_id, posisi, nama, umur, pendidikan, pekerjaan, penanggung_id FROM Tanggungan";
         List<Tanggungan> tanggungans = new ArrayList<>();
         try (Connection conn = DatabaseManager.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 User user = userDAO.getUserByUserId(rs.getString("tanggungan_id"));
                 if (user != null) {
                     Tanggungan tanggungan = new Tanggungan(
-                        user.getUserId(),
-                        user.getNama(),
-                        user.getUmur(),
-                        user.getEmail(),
-                        user.getPassword(),
-                        rs.getString("posisi"),
-                        rs.getString("pendidikan"),
-                        rs.getString("pekerjaan"),
-                        rs.getString("penanggung_id") // Muat penanggungId
-                    );
-                    tanggungan.setNama(rs.getString("nama"));
-                    tanggungan.setUmur(rs.getInt("umur"));
+                            user.getUserId(),
+                            user.getNama(),
+                            user.getUmur(),
+                            user.getEmail(),
+                            user.getPassword(),
+                            rs.getString("posisi"),
+                            rs.getString("pendidikan"),
+                            rs.getString("pekerjaan"),
+                            rs.getString("penanggung_id"));
                     tanggungans.add(tanggungan);
                 }
             }
@@ -193,27 +202,27 @@ public class TanggunganDAO {
         }
         return tanggungans;
     }
+
     public List<Tanggungan> getTanggunanByPenanggungId(String penanggungId) {
         String sql = "SELECT tanggungan_id, posisi, nama, umur, pendidikan, pekerjaan, penanggung_id FROM Tanggungan WHERE penanggung_id = ?";
         List<Tanggungan> tanggungans = new ArrayList<>();
         try (Connection conn = DatabaseManager.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, penanggungId);
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 User user = userDAO.getUserByUserId(rs.getString("tanggungan_id"));
                 if (user != null) {
                     Tanggungan tanggungan = new Tanggungan(
-                        user.getUserId(),
-                        user.getNama(),
-                        user.getUmur(),
-                        user.getEmail(),
-                        user.getPassword(),
-                        rs.getString("posisi"),
-                        rs.getString("pendidikan"),
-                        rs.getString("pekerjaan"),
-                        rs.getString("penanggung_id")
-                    );
+                            user.getUserId(),
+                            user.getNama(),
+                            user.getUmur(),
+                            user.getEmail(),
+                            user.getPassword(),
+                            rs.getString("posisi"),
+                            rs.getString("pendidikan"),
+                            rs.getString("pekerjaan"),
+                            rs.getString("penanggung_id"));
                     tanggungans.add(tanggungan);
                 }
             }

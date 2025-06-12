@@ -6,7 +6,8 @@ package com.subwayit.model;
  */
 public class Admin extends User {
     // Attributes specific to Admin, based on Section 2.3.4 of the document
-    private String adminId; // Document lists adminID[cite: 158], but userId from parent can also serve this.
+    private String adminId; // Document lists adminID[cite: 158], but userId from parent can also serve
+                            // this.
                             // Keeping for direct mapping to doc.
 
     // Constructor
@@ -17,7 +18,8 @@ public class Admin extends User {
         this.adminId = adminId;
     }
 
-    // --- Operations (Methods) specific to Admin, based on Section 2.3.4 of the document ---
+    // --- Operations (Methods) specific to Admin, based on Section 2.3.4 of the
+    // document ---
 
     /**
      * Allows the admin to view all users in the system. [cite: 155]
@@ -28,7 +30,8 @@ public class Admin extends User {
     }
 
     /**
-     * Allows the admin to manage user access (e.g., changing roles, permissions). [cite: 158]
+     * Allows the admin to manage user access (e.g., changing roles, permissions).
+     * [cite: 158]
      */
     public void manageAccess() {
         System.out.println(this.getNama() + " (Admin) is managing user access.");

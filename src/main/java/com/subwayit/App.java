@@ -235,10 +235,31 @@ public class App extends Application {
         if (user != null && user.getPassword().equals(password)) {
             showModernAlert(Alert.AlertType.INFORMATION, "Login Berhasil",
                     "Selamat datang kembali, " + user.getNama() + "!");
-            openDashboard(user);
+
+            // Check if user is Admin and redirect to Admin Dashboard
+            if ("Admin".equals(user.getRole())) {
+                openAdminDashboard(user);
+            } else {
+                openDashboard(user);
+            }
         } else {
             showModernAlert(Alert.AlertType.ERROR, "Login Gagal", "Nama pengguna atau kata sandi salah.");
         }
+    }
+
+    private void openAdminDashboard(User admin) {
+        com.subwayit.gui.AdminDashboard adminDashboard = new com.subwayit.gui.AdminDashboard(
+                primaryStage,
+                admin,
+                userDAO,
+                penanggungDAO,
+                tanggunganDAO,
+                adminDAO,
+                transaksiDAO,
+                utangDAO);
+        Scene adminScene = adminDashboard.createScene();
+        primaryStage.setScene(adminScene);
+        primaryStage.centerOnScreen();
     }
 
     private void handleRegister() {
@@ -253,7 +274,7 @@ public class App extends Application {
 
         // Form fields
         TextField userID = new TextField();
-        userID.setPromptText("user ID");
+        userID.setPromptText("User ID (akan digenerate otomatis jika kosong)");
 
         TextField namaField = new TextField();
         namaField.setPromptText("Nama Lengkap");
@@ -288,29 +309,43 @@ public class App extends Application {
                 String pekerjaan = pekerjaanField.getText().trim();
                 String role = roleComboBox.getValue();
 
-                if (userId.isEmpty() || nama.isEmpty() || umurStr.isEmpty() || email.isEmpty() || password.isEmpty()
-                        || role == null) {
+                if (nama.isEmpty() || umurStr.isEmpty() || email.isEmpty() || password.isEmpty() || role == null) {
                     showModernAlert(Alert.AlertType.ERROR, "Error", "Semua field harus diisi!");
+                    return;
+                }
+
+                // Generate user ID if not provided
+                if (userId.isEmpty()) {
+                    userId = "USR-" + java.util.UUID.randomUUID().toString().substring(0, 8);
+                }
+
+                // Check if user ID already exists
+                if (userDAO.getUserByUserId(userId) != null) {
+                    showModernAlert(Alert.AlertType.ERROR, "Error",
+                            "User ID sudah ada. Silakan gunakan User ID lain atau kosongkan untuk generate otomatis.");
                     return;
                 }
 
                 int umur = Integer.parseInt(umurStr);
 
-                // Create user
-                User newUser = new User(userId, nama, umur, email, password, role);
-                userDAO.addUser(newUser);
-
-                // If role is Penanggung, create Penanggung entry
+                // Create user based on role
                 if ("Penanggung".equals(role)) {
+                    // Create user first
+                    User newUser = new User(userId, nama, umur, email, password, role);
+                    userDAO.addUser(newUser);
+
+                    // Then create Penanggung entry
                     Penanggung newPenanggung = new Penanggung(userId, nama, umur, email, password, pekerjaan);
                     penanggungDAO.addPenanggung(newPenanggung);
+
                 } else if ("Admin".equals(role)) {
-                    // Create Admin entry if needed
-                    Admin newAdmin = new Admin(userId, nama, umur, email, password, "Admin");
+                    // Create Admin entry (this will handle User creation internally)
+                    Admin newAdmin = new Admin(userId, nama, umur, email, password, userId); // Use userId as adminId
                     adminDAO.addAdmin(newAdmin);
                 }
 
-                showModernAlert(Alert.AlertType.INFORMATION, "Berhasil", "Akun berhasil dibuat! Silakan login.");
+                showModernAlert(Alert.AlertType.INFORMATION, "Berhasil",
+                        "Akun berhasil dibuat! Silakan login dengan User ID: " + userId);
                 registerStage.close();
 
             } catch (NumberFormatException ex) {
