@@ -102,7 +102,8 @@ public class App extends Application {
         loginCard.setAlignment(Pos.CENTER);
         loginCard.setPadding(new Insets(40, 50, 40, 50));
         loginCard.setMaxWidth(450);
-        loginCard.setStyle("-fx-background-color: white; -fx-background-radius: 16; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 20, 0, 0, 8); -fx-border-color: #E2E8F0; -fx-border-width: 1; -fx-border-radius: 16;");
+        loginCard.setStyle(
+                "-fx-background-color: white; -fx-background-radius: 16; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 20, 0, 0, 8); -fx-border-color: #E2E8F0; -fx-border-width: 1; -fx-border-radius: 16;");
 
         VBox titleSection = createTitleSection();
         VBox loginForm = createLoginForm();
@@ -146,7 +147,7 @@ public class App extends Application {
         loginDesc.setTextFill(Color.web(TEXT_GRAY));
         VBox welcomeSection = new VBox(5, welcomeLabel, loginDesc);
         welcomeSection.setAlignment(Pos.CENTER);
-        
+
         // Username field
         usernameField = new TextField();
         usernameField.setPromptText("Masukkan nama pengguna Anda");
@@ -163,15 +164,18 @@ public class App extends Application {
         loginButton.setPrefWidth(320);
         loginButton.setPrefHeight(50);
         loginButton.setTextFill(Color.WHITE);
-        loginButton.setStyle("-fx-background-color: " + PRIMARY_GREEN + "; -fx-background-radius: 10; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0, 0, 3);");
-        loginButton.setOnMouseEntered(e -> loginButton.setStyle(loginButton.getStyle().replace(PRIMARY_GREEN, DARK_GREEN)));
-        loginButton.setOnMouseExited(e -> loginButton.setStyle(loginButton.getStyle().replace(DARK_GREEN, PRIMARY_GREEN)));
+        loginButton.setStyle("-fx-background-color: " + PRIMARY_GREEN
+                + "; -fx-background-radius: 10; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0, 0, 3);");
+        loginButton.setOnMouseEntered(
+                e -> loginButton.setStyle(loginButton.getStyle().replace(PRIMARY_GREEN, DARK_GREEN)));
+        loginButton
+                .setOnMouseExited(e -> loginButton.setStyle(loginButton.getStyle().replace(DARK_GREEN, PRIMARY_GREEN)));
         loginButton.setOnAction(e -> handleLogin());
 
         loginForm.getChildren().addAll(welcomeSection, usernameSection, passwordSection, loginButton);
         return loginForm;
     }
-    
+
     private VBox createFieldSection(String labelText, TextField field) {
         VBox section = new VBox(8);
         Label label = new Label(labelText);
@@ -180,12 +184,15 @@ public class App extends Application {
 
         field.setPrefHeight(45);
         field.setFont(Font.font("Segoe UI", 14));
-        field.setStyle("-fx-background-color: white; -fx-border-color: #E2E8F0; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 12;");
+        field.setStyle(
+                "-fx-background-color: white; -fx-border-color: #E2E8F0; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 12;");
         field.focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) field.setStyle(field.getStyle().replace("#E2E8F0", PRIMARY_GREEN));
-            else field.setStyle(field.getStyle().replace(PRIMARY_GREEN, "#E2E8F0"));
+            if (newVal)
+                field.setStyle(field.getStyle().replace("#E2E8F0", PRIMARY_GREEN));
+            else
+                field.setStyle(field.getStyle().replace(PRIMARY_GREEN, "#E2E8F0"));
         });
-        
+
         section.getChildren().addAll(label, field);
         return section;
     }
@@ -194,16 +201,20 @@ public class App extends Application {
         VBox registerSection = new VBox(15);
         registerSection.setAlignment(Pos.CENTER);
 
-        HBox separator = new HBox(10, new Rectangle(100, 1, Color.web("#E2E8F0")), new Label("ATAU"), new Rectangle(100, 1, Color.web("#E2E8F0")));
+        HBox separator = new HBox(10, new Rectangle(100, 1, Color.web("#E2E8F0")), new Label("ATAU"),
+                new Rectangle(100, 1, Color.web("#E2E8F0")));
         separator.setAlignment(Pos.CENTER);
 
         registerButton = new Button("✨ Buat Akun Baru");
         registerButton.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 14));
         registerButton.setPrefWidth(320);
         registerButton.setPrefHeight(45);
-        registerButton.setStyle("-fx-background-color: white; -fx-border-color: " + PRIMARY_GREEN + "; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8; -fx-cursor: hand;");
-        registerButton.setOnMouseEntered(e -> registerButton.setStyle(registerButton.getStyle() + "-fx-background-color: " + LIGHT_GREEN + ";"));
-        registerButton.setOnMouseExited(e -> registerButton.setStyle(registerButton.getStyle().replace("-fx-background-color: " + LIGHT_GREEN + ";", "")));
+        registerButton.setStyle("-fx-background-color: white; -fx-border-color: " + PRIMARY_GREEN
+                + "; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8; -fx-cursor: hand;");
+        registerButton.setOnMouseEntered(
+                e -> registerButton.setStyle(registerButton.getStyle() + "-fx-background-color: " + LIGHT_GREEN + ";"));
+        registerButton.setOnMouseExited(e -> registerButton
+                .setStyle(registerButton.getStyle().replace("-fx-background-color: " + LIGHT_GREEN + ";", "")));
         registerButton.setOnAction(e -> handleRegister());
 
         registerSection.getChildren().addAll(separator, registerButton);
@@ -222,7 +233,8 @@ public class App extends Application {
         User user = userDAO.getUserByUserId(username);
 
         if (user != null && user.getPassword().equals(password)) {
-            showModernAlert(Alert.AlertType.INFORMATION, "Login Berhasil", "Selamat datang kembali, " + user.getNama() + "!");
+            showModernAlert(Alert.AlertType.INFORMATION, "Login Berhasil",
+                    "Selamat datang kembali, " + user.getNama() + "!");
             openDashboard(user);
         } else {
             showModernAlert(Alert.AlertType.ERROR, "Login Gagal", "Nama pengguna atau kata sandi salah.");
@@ -230,25 +242,115 @@ public class App extends Application {
     }
 
     private void handleRegister() {
-        // Logika untuk handleRegister tidak berubah dan dapat disalin dari file asli Anda.
-        // Pastikan logika di dalamnya menggunakan instance DAO yang sudah diinisialisasi.
+        // Create a simple registration form for the first admin/penanggung
+        Stage registerStage = new Stage();
+        registerStage.setTitle("Registrasi Akun Baru");
+        registerStage.initOwner(primaryStage);
+
+        VBox layout = new VBox(15);
+        layout.setPadding(new Insets(20));
+        layout.setAlignment(Pos.CENTER);
+
+        // Form fields
+        TextField userID = new TextField();
+        userID.setPromptText("user ID");
+
+        TextField namaField = new TextField();
+        namaField.setPromptText("Nama Lengkap");
+
+        TextField umurField = new TextField();
+        umurField.setPromptText("Umur");
+
+        TextField emailField = new TextField();
+        emailField.setPromptText("Email");
+
+        PasswordField passwordRegField = new PasswordField();
+        passwordRegField.setPromptText("Password");
+
+        TextField pekerjaanField = new TextField();
+        pekerjaanField.setPromptText("Pekerjaan");
+
+        ComboBox<String> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll("Penanggung", "Admin");
+        roleComboBox.setValue("Penanggung");
+        roleComboBox.setPromptText("Pilih Role");
+
+        Button registerBtn = new Button("Daftar");
+        Button cancelBtn = new Button("Batal");
+
+        registerBtn.setOnAction(e -> {
+            try {
+                String userId = userID.getText().trim();
+                String nama = namaField.getText().trim();
+                String umurStr = umurField.getText().trim();
+                String email = emailField.getText().trim();
+                String password = passwordRegField.getText().trim();
+                String pekerjaan = pekerjaanField.getText().trim();
+                String role = roleComboBox.getValue();
+
+                if (userId.isEmpty() || nama.isEmpty() || umurStr.isEmpty() || email.isEmpty() || password.isEmpty()
+                        || role == null) {
+                    showModernAlert(Alert.AlertType.ERROR, "Error", "Semua field harus diisi!");
+                    return;
+                }
+
+                int umur = Integer.parseInt(umurStr);
+
+                // Create user
+                User newUser = new User(userId, nama, umur, email, password, role);
+                userDAO.addUser(newUser);
+
+                // If role is Penanggung, create Penanggung entry
+                if ("Penanggung".equals(role)) {
+                    Penanggung newPenanggung = new Penanggung(userId, nama, umur, email, password, pekerjaan);
+                    penanggungDAO.addPenanggung(newPenanggung);
+                } else if ("Admin".equals(role)) {
+                    // Create Admin entry if needed
+                    Admin newAdmin = new Admin(userId, nama, umur, email, password, "Admin");
+                    adminDAO.addAdmin(newAdmin);
+                }
+
+                showModernAlert(Alert.AlertType.INFORMATION, "Berhasil", "Akun berhasil dibuat! Silakan login.");
+                registerStage.close();
+
+            } catch (NumberFormatException ex) {
+                showModernAlert(Alert.AlertType.ERROR, "Error", "Umur harus berupa angka!");
+            } catch (Exception ex) {
+                showModernAlert(Alert.AlertType.ERROR, "Error", "Terjadi kesalahan: " + ex.getMessage());
+                ex.printStackTrace();
+            }
+        });
+
+        cancelBtn.setOnAction(e -> registerStage.close());
+
+        HBox buttonBox = new HBox(10, cancelBtn, registerBtn);
+        buttonBox.setAlignment(Pos.CENTER);
+
+        layout.getChildren().addAll(
+                new Label("Registrasi Akun Baru"),
+                userID, namaField, umurField, emailField, passwordRegField, pekerjaanField, roleComboBox,
+                buttonBox);
+
+        Scene scene = new Scene(layout, 350, 400);
+        registerStage.setScene(scene);
+        registerStage.showAndWait();
     }
 
-private void openDashboard(User user) {
-    DashboardPage dashboardPage = new DashboardPage(
-        primaryStage, 
-        user, 
-        userDAO, 
-        penanggungDAO, 
-        tanggunganDAO, 
-        adminDAO, 
-        transaksiDAO, 
-        utangDAO // <- Add the utangDAO instance here
-    );
-    Scene dashboardScene = dashboardPage.createScene();
-    primaryStage.setScene(dashboardScene);
-    primaryStage.centerOnScreen();
-}
+    private void openDashboard(User user) {
+        DashboardPage dashboardPage = new DashboardPage(
+                primaryStage,
+                user,
+                userDAO,
+                penanggungDAO,
+                tanggunganDAO,
+                adminDAO,
+                transaksiDAO,
+                utangDAO // <- Add the utangDAO instance here
+        );
+        Scene dashboardScene = dashboardPage.createScene();
+        primaryStage.setScene(dashboardScene);
+        primaryStage.centerOnScreen();
+    }
 
     private void showModernAlert(Alert.AlertType type, String title, String message) {
         Alert alert = new Alert(type);
